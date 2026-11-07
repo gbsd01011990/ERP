@@ -37,6 +37,13 @@ test("Deutsche Zahlen", () => {
   assert.equal(parseZahl("1.234,50"), 1234.5);
   assert.equal(parseZahl("12.5"), 12.5);
   assert.equal(parseZahl(""), 0);
+  assert.equal(parseZahl("1.700"), 1700);        // Tausenderpunkt ohne Komma
+  assert.equal(parseZahl("200.000"), 200000);
+  assert.equal(parseZahl("1.234.567"), 1234567);
+  assert.equal(parseZahl("163.200,00"), 163200);
+  assert.equal(parseZahl("74,25 €"), 74.25);
+  assert.equal(parseZahl("12.50"), 12.5);         // Dezimalpunkt, keine 3er-Gruppe
+  assert.equal(parseZahl("abc", 7), 7);
 });
 
 test("Aufmaß mit leeren Faktoren und Abzug", () => {

@@ -24,6 +24,22 @@ Schritt 2 ist fertig:
 - Angebot versendet → Projektstatus „Angebot versendet“; angenommen → Auftragsbestätigung als Kopie
 - PDF im CD der jeweiligen Firma über die Generatoren aus den CD-Vorgaben (`pdf/`)
 
+Schritt 3 ist fertig:
+
+- **Lager:** mehrere Lager je Firma (Hauptlager, Außenlager, Fahrzeug, Baustelle), Artikel mit Bestand je Lager,
+  Zugang, Abgang, Umbuchung, Inventur und Entnahme auf Projekte. Bewertung mit gleitendem Durchschnittspreis,
+  Mindestbestand mit Warnung, unveränderliches Lagerjournal. Kein negativer Bestand.
+- **Geräte und Maschinen:** Inventar mit Status, Standort, Betriebsstunden, Prüfungen (UVV, HU, AU, Wartung,
+  DGUV V3) mit Intervall und Fälligkeitsampel, Historie mit Reparaturkosten, Einsätze auf Projekten.
+  Maschinenstundensatz aus Abschreibung, Zins, Reparatur, Fixkosten und Betriebskosten oder als fester Satz.
+- **Plankostenrechnung:** Jahresplan je Firma (Personal, Gemeinkosten, Wagnis und Gewinn) ergibt
+  Stundenverrechnungssatz und Zuschläge; per Klick in die Angebotskalkulation übernehmen. Nur für Admins.
+- **Nachkalkulation im Projekt:** Soll aus Angebot/Auftragsbestätigung gegen Ist aus Lagerentnahmen und
+  Geräteeinsätzen. Lohnstunden-Ist folgt mit der Zeiterfassung.
+- Übersicht zeigt fällige Prüfungen und Artikel unter Mindestbestand.
+- Kolonnen dürfen Material entnehmen, umbuchen, Einsätze und Prüfungen erfassen; Zugang, Inventur,
+  Stammdaten und Plankosten bleiben dem Büro bzw. Admin vorbehalten.
+
 Schnittstelle:
 
 - GraphQL-API unter `/api/graphql` mit API-Schlüsseln je Benutzer (lesen oder lesen und schreiben),

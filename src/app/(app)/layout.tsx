@@ -9,8 +9,11 @@ const NAV = [
   { href: "/projekte", text: "Projekte" },
   { href: "/angebote", text: "Angebote" },
   { href: "/kontakte", text: "Kontakte" },
-  { href: "/leistungen", text: "Leistungen" },
-  { href: "/einstellungen/api", text: "API" },
+  { href: "/leistungen", text: "Leistungen", buero: true },
+  { href: "/lager", text: "Lager" },
+  { href: "/geraete", text: "Geräte" },
+  { href: "/plankosten", text: "Plankosten", nurAdmin: true },
+  { href: "/einstellungen/api", text: "API", buero: true },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -24,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <Link href="/" className="text-lg font-bold text-marke">ERP</Link>
           <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            {NAV.map((n) => (
+            {NAV.filter((n) => (!("nurAdmin" in n) || b.rolle === "ADMIN") && (!("buero" in n) || b.rolle !== "KOLONNE")).map((n) => (
               <Link key={n.href} href={n.href} className="text-slate-600 hover:text-marke">{n.text}</Link>
             ))}
           </nav>

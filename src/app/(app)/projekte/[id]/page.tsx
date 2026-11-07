@@ -5,6 +5,7 @@ import { benutzerPflicht, firmenIds } from "@/lib/auth";
 import { euro, datum, datumZeit, kontaktName } from "@/lib/format";
 import { logbuchEintragen, projektStatusSetzen } from "../../actions";
 import { angebotAnlegen } from "../../angebote/actions";
+import { nachkalkulation } from "@/lib/nachkalkulation";
 
 const ART_TEXT = { NOTIZ: "Notiz", ANRUF: "Anruf", EMAIL: "E-Mail", TERMIN: "Termin", STATUS: "Status", SYSTEM: "System" } as const;
 
@@ -24,7 +25,12 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
     },
   });
   if (!p || !firmenIds(b).includes(p.firmaId)) notFound();
-  const alleStatus = await db.pipelineStatus.findMany({ where: { firmaId: p.firmaId }, orderBy: { reihenfolge: "asc" } });
+  const [alleStatus, nk] = await Promise.all([
+    db.pipelineStatus.findMany({ where: { firmaId: p.firmaId }, orderBy: { reihenfolge: "asc" } }),
+    nachkalkulation(p.id),
+  ]);
+  const abweichung = (soll: number, ist: number) =>
+    soll > 0 ? <span className={ist > soll ? "text-red-700" : "text-emerald-700"}>{ist > soll ? "+" : ""}{Math.round(((ist - soll) / soll) * 100)} %</span> : null;
 
   return (
     <div className="space-y-4">
@@ -93,6 +99,34 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
           <p className="pt-2 text-xs text-slate-400">Rechnungen über Lexware folgen im nächsten Schritt.</p>
         </section>
       </div>
+
+      {(nk.soll || nk.entnahmen.length > 0 || nk.einsaetze.length > 0) && (
+        <section className="karte overflow-x-auto text-sm">
+          <h2 className="mb-1 font-semibold">Nachkalkulation</h2>
+          <p className="mb-3 text-xs text-slate-500">
+            {nk.basis ? `Soll aus ${nk.basis.art === "ANGEBOT" ? "Angebot" : "Auftragsbestätigung"} ${nk.basis.nummer}${nk.basis.version > 1 ? `-${nk.basis.version}` : ""}` : "Noch kein Angebot als Soll"}
+            {" · Ist aus Lagerentnahmen und Geräteeinsätzen. Lohnstunden folgen mit der Zeiterfassung."}
+          </p>
+          <table className="tabelle max-w-2xl">
+            <thead><tr><th>Kostenart</th><th className="text-right">Soll</th><th className="text-right">Ist</th><th className="text-right">Abweichung</th></tr></thead>
+            <tbody>
+              <tr><td>Material (EK)</td><td className="text-right">{euro(nk.soll?.materialEk ?? 0)}</td><td className="text-right">{euro(nk.istMaterial)}</td><td className="text-right">{abweichung(nk.soll?.materialEk ?? 0, nk.istMaterial)}</td></tr>
+              <tr><td>Geräte</td><td className="text-right">{euro(nk.soll?.geraete ?? 0)}</td><td className="text-right">{euro(nk.istGeraete)} <span className="text-xs text-slate-500">({nk.istGeraeteStunden.toLocaleString("de-DE")} h)</span></td><td className="text-right">{abweichung(nk.soll?.geraete ?? 0, nk.istGeraete)}</td></tr>
+              <tr><td>Lohnstunden</td><td className="text-right">{(nk.soll?.stunden ?? 0).toLocaleString("de-DE")} h</td><td className="text-right text-slate-400">folgt</td><td /></tr>
+              <tr><td>Fremdleistung (EK)</td><td className="text-right">{euro(nk.soll?.fremdEk ?? 0)}</td><td className="text-right text-slate-400">folgt</td><td /></tr>
+            </tbody>
+          </table>
+          {(nk.entnahmen.length > 0 || nk.einsaetze.length > 0) && (
+            <details className="mt-3">
+              <summary className="cursor-pointer text-marke">Einzelbuchungen</summary>
+              <ul className="mt-2 divide-y divide-slate-100">
+                {nk.entnahmen.map((e) => <li key={e.id} className="flex gap-3 py-1"><span className="w-24 text-slate-400">{datum(e.createdAt)}</span><span className="flex-1">{e.menge.toString().replace(".", ",")} {e.artikel.einheit} {e.artikel.bezeichnung}</span><span>{euro(e.wert)}</span></li>)}
+                {nk.einsaetze.map((e) => <li key={e.id} className="flex gap-3 py-1"><span className="w-24 text-slate-400">{datum(e.datum)}</span><span className="flex-1">{e.stunden.toString().replace(".", ",")} h {e.geraet.bezeichnung}</span><span>{euro(Number(e.stunden) * Number(e.kostensatz))}</span></li>)}
+              </ul>
+            </details>
+          )}
+        </section>
+      )}
 
       <section className="karte">
         <h2 className="mb-3 font-semibold">Logbuch</h2>

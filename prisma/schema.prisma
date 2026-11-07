@@ -73,6 +73,10 @@ model Firma {
   kontaktIds   KontaktFremdId[]
   leistungen   Leistung[]
   angebote     Angebot[]
+  lager        Lager[]
+  artikel      Artikel[]
+  geraete      Geraet[]
+  kostenplaene Kostenplan[]
 }
 
 model Benutzer {
@@ -90,6 +94,9 @@ model Benutzer {
   projekte     Projekt[] @relation("Verantwortlich")
   angebote     Angebot[]
   apiSchluessel ApiSchluessel[]
+  lagerBuchungen LagerBuchung[]
+  geraetEreignisse GeraetEreignis[]
+  geraetEinsaetze GeraetEinsatz[]
 }
 
 model Zugriff {
@@ -239,6 +246,8 @@ model Projekt {
   verantwortlich Benutzer?        @relation("Verantwortlich", fields: [verantwortlichId], references: [id])
   logbuch        LogbuchEintrag[]
   angebote       Angebot[]
+  lagerBuchungen LagerBuchung[]
+  geraetEinsaetze GeraetEinsatz[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -393,4 +402,259 @@ model ApiSchluessel {
   widerrufenAm  DateTime?
   createdAt     DateTime  @default(now())
   benutzer      Benutzer  @relation(fields: [benutzerId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------- Lager
+
+enum LagerArt {
+  HAUPTLAGER
+  AUSSENLAGER
+  FAHRZEUG
+  BAUSTELLE
+}
+
+enum BuchungsArt {
+  ZUGANG      // Wareneingang mit EK-Preis
+  ABGANG      // Verbrauch, Schwund, Entsorgung
+  UMBUCHUNG   // von Lager zu Lager
+  PROJEKT     // Entnahme auf ein Projekt (Ist-Kosten)
+  INVENTUR    // Korrektur auf gezählten Bestand
+}
+
+model Lager {
+  id        String   @id @default(cuid())
+  firmaId   String
+  name      String
+  art       LagerArt @default(HAUPTLAGER)
+  adresse   String?
+  aktiv     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  firma     Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  bestaende Bestand[]
+  abgaenge  LagerBuchung[] @relation("VonLager")
+  zugaenge  LagerBuchung[] @relation("NachLager")
+  geraete   Geraet[]
+
+  @@unique([firmaId, name])
+}
+
+model Artikel {
+  id             String   @id @default(cuid())
+  firmaId        String
+  nummer         String
+  bezeichnung    String
+  kategorie      String?
+  einheit        String   @default("Stk.")
+  durchschnittEk Decimal  @default(0) @db.Decimal(12, 4) // gleitender Durchschnitt, Basis der Bestandsbewertung
+  letzterEk      Decimal? @db.Decimal(12, 4)
+  mindestbestand Decimal? @db.Decimal(12, 3)            // Summe über alle Lager
+  lieferant      String?
+  aktiv          Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  firma          Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  bestaende      Bestand[]
+  buchungen      LagerBuchung[]
+
+  @@unique([firmaId, nummer])
+}
+
+model Bestand {
+  artikelId String
+  lagerId   String
+  menge     Decimal @default(0) @db.Decimal(12, 3)
+  artikel   Artikel @relation(fields: [artikelId], references: [id], onDelete: Cascade)
+  lager     Lager   @relation(fields: [lagerId], references: [id], onDelete: Cascade)
+
+  @@id([artikelId, lagerId])
+}
+
+/// Unveränderliches Lagerjournal. Korrekturen laufen über neue Buchungen.
+model LagerBuchung {
+  id          String      @id @default(cuid())
+  artikelId   String
+  art         BuchungsArt
+  menge       Decimal     @db.Decimal(12, 3) // immer positiv; bei INVENTUR die Differenz mit Vorzeichen
+  vonLagerId  String?
+  nachLagerId String?
+  ekPreis     Decimal?    @db.Decimal(12, 4) // Zugang: Einkaufspreis; sonst Bewertungspreis zum Buchungszeitpunkt
+  wert        Decimal     @default(0) @db.Decimal(12, 2)
+  projektId   String?
+  beleg       String?     // Lieferschein-Nr. o. Ä.
+  notiz       String?
+  benutzerId  String?
+  createdAt   DateTime    @default(now())
+  artikel     Artikel     @relation(fields: [artikelId], references: [id], onDelete: Cascade)
+  vonLager    Lager?      @relation("VonLager", fields: [vonLagerId], references: [id])
+  nachLager   Lager?      @relation("NachLager", fields: [nachLagerId], references: [id])
+  projekt     Projekt?    @relation(fields: [projektId], references: [id])
+  benutzer    Benutzer?   @relation(fields: [benutzerId], references: [id])
+
+  @@index([artikelId, createdAt])
+  @@index([projektId])
+}
+
+// ---------------------------------------------------------------- Geräte und Maschinen
+
+enum GeraetKategorie {
+  FAHRZEUG
+  MASCHINE
+  ANHAENGER
+  KLEINGERAET
+  WERKZEUG
+}
+
+enum GeraetStatus {
+  VERFUEGBAR
+  IM_EINSATZ
+  WERKSTATT
+  DEFEKT
+  AUSGEMUSTERT
+}
+
+enum PruefArt {
+  UVV
+  HU
+  AU
+  WARTUNG
+  INSPEKTION
+  ELEKTROPRUEFUNG
+  SONSTIGE
+}
+
+enum EreignisArt {
+  PRUEFUNG
+  WARTUNG
+  REPARATUR
+  SCHADEN
+  NOTIZ
+}
+
+model Geraet {
+  id                 String          @id @default(cuid())
+  firmaId            String
+  inventarNr         String
+  bezeichnung        String
+  kategorie          GeraetKategorie @default(MASCHINE)
+  status             GeraetStatus    @default(VERFUEGBAR)
+  hersteller         String?
+  modell             String?
+  seriennummer       String?
+  kennzeichen        String?
+  baujahr            Int?
+  lagerId            String?         // Standort
+  betriebsstunden    Decimal?        @db.Decimal(10, 1)
+  kmStand            Int?
+  notiz              String?
+  // Maschinenkalkulation (je Jahr)
+  anschaffungAm      DateTime?
+  anschaffungspreis  Decimal?        @db.Decimal(12, 2)
+  nutzungsdauerJahre Int?
+  einsatzstundenJahr Int?
+  zinsProzent        Decimal         @default(5) @db.Decimal(5, 2)   // kalk. Zins auf das halbe Anschaffungskapital
+  reparaturProzent   Decimal         @default(8) @db.Decimal(5, 2)   // Reparatur/Wartung in % vom Anschaffungspreis je Jahr
+  fixkostenJahr      Decimal         @default(0) @db.Decimal(12, 2)  // Versicherung, Steuer, Garage
+  betriebskostenStd  Decimal         @default(0) @db.Decimal(10, 2)  // Kraftstoff, Schmierstoffe je Stunde
+  verrechnungssatz   Decimal?        @db.Decimal(10, 2)              // fester Satz statt Kalkulation
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  firma              Firma           @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  lager              Lager?          @relation(fields: [lagerId], references: [id])
+  pruefungen         GeraetPruefung[]
+  ereignisse         GeraetEreignis[]
+  einsaetze          GeraetEinsatz[]
+
+  @@unique([firmaId, inventarNr])
+}
+
+model GeraetPruefung {
+  id              String    @id @default(cuid())
+  geraetId        String
+  art             PruefArt
+  bezeichnung     String?
+  intervallMonate Int?
+  letzteAm        DateTime?
+  naechsteAm      DateTime?
+  geraet          Geraet    @relation(fields: [geraetId], references: [id], onDelete: Cascade)
+
+  @@index([naechsteAm])
+}
+
+model GeraetEreignis {
+  id              String      @id @default(cuid())
+  geraetId        String
+  art             EreignisArt
+  datum           DateTime    @default(now())
+  text            String
+  kosten          Decimal?    @db.Decimal(12, 2)
+  betriebsstunden Decimal?    @db.Decimal(10, 1)
+  benutzerId      String?
+  createdAt       DateTime    @default(now())
+  geraet          Geraet      @relation(fields: [geraetId], references: [id], onDelete: Cascade)
+  benutzer        Benutzer?   @relation(fields: [benutzerId], references: [id])
+
+  @@index([geraetId, datum])
+}
+
+model GeraetEinsatz {
+  id         String    @id @default(cuid())
+  geraetId   String
+  projektId  String
+  datum      DateTime
+  stunden    Decimal   @db.Decimal(8, 2)
+  kostensatz Decimal   @db.Decimal(10, 2) // Satz zum Zeitpunkt des Einsatzes eingefroren
+  notiz      String?
+  benutzerId String?
+  createdAt  DateTime  @default(now())
+  geraet     Geraet    @relation(fields: [geraetId], references: [id], onDelete: Cascade)
+  projekt    Projekt   @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  benutzer   Benutzer? @relation(fields: [benutzerId], references: [id])
+
+  @@index([projektId])
+  @@index([geraetId, datum])
+}
+
+// ---------------------------------------------------------------- Plankostenrechnung
+
+enum Verteilung {
+  LOHN      // Gemeinkosten werden auf die produktiven Stunden umgelegt
+  MATERIAL  // Zuschlag auf Material-EK
+  FREMD     // Zuschlag auf Fremdleistung
+}
+
+model Kostenplan {
+  id                   String   @id @default(cuid())
+  firmaId              String
+  jahr                 Int
+  bezeichnung          String?
+  // Personal
+  mitarbeiter          Decimal  @default(0) @db.Decimal(6, 2)   // gewerbliche Mitarbeiter (Vollzeit-Äquivalent)
+  bezahlteStundenJahr  Decimal  @default(1720) @db.Decimal(7, 1) // je Mitarbeiter
+  produktivProzent     Decimal  @default(85) @db.Decimal(5, 2)   // Anteil auf Baustellen abrechenbar
+  mittellohn           Decimal  @default(0) @db.Decimal(8, 2)    // €/h brutto
+  lohnnebenkostenProzent Decimal @default(85) @db.Decimal(5, 2)  // Sozialkosten, Urlaub, Feiertage, Krankheit
+  // Einsatz
+  materialEinsatzJahr  Decimal  @default(0) @db.Decimal(12, 2)
+  fremdEinsatzJahr     Decimal  @default(0) @db.Decimal(12, 2)
+  wagnisGewinnProzent  Decimal  @default(8) @db.Decimal(5, 2)
+  uebernommenAm        DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  firma                Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  zeilen               KostenplanZeile[]
+
+  @@unique([firmaId, jahr])
+}
+
+model KostenplanZeile {
+  id          String     @id @default(cuid())
+  planId      String
+  reihenfolge Int
+  gruppe      String     // z. B. Personal Verwaltung, Fahrzeuge, Gebäude, Versicherungen
+  bezeichnung String
+  betragJahr  Decimal    @db.Decimal(12, 2)
+  verteilung  Verteilung @default(LOHN)
+  plan        Kostenplan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, reihenfolge])
 }

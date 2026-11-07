@@ -2,13 +2,17 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { benutzerPflicht } from "@/lib/auth";
 import { firmenFilter } from "@/lib/firma";
-import { euro, datumZeit, kontaktName } from "@/lib/format";
+import { euro, datum, datumZeit, kontaktName } from "@/lib/format";
+import { n } from "@/lib/kalkulation";
+import { pruefAmpel } from "@/lib/rechnung/geraete";
+import { PRUEFART } from "@/lib/geraete-texte";
 
 export default async function Uebersicht() {
   const b = await benutzerPflicht();
   const { ids } = await firmenFilter(b);
 
-  const [firmen, offene, letzte] = await Promise.all([
+  const in30Tagen = new Date(Date.now() + 30 * 864e5);
+  const [firmen, offene, letzte, pruefungen, mindest] = await Promise.all([
     db.firma.findMany({ where: { id: { in: ids } }, orderBy: { name: "asc" } }),
     db.projekt.findMany({
       where: { firmaId: { in: ids }, status: { abgeschlossen: false } },
@@ -20,7 +24,17 @@ export default async function Uebersicht() {
       take: 12,
       include: { projekt: { select: { id: true, nummer: true, titel: true, kontakt: true } }, benutzer: { select: { name: true } } },
     }),
+    db.geraetPruefung.findMany({
+      where: { naechsteAm: { lte: in30Tagen }, geraet: { firmaId: { in: ids }, status: { not: "AUSGEMUSTERT" } } },
+      include: { geraet: true },
+      orderBy: { naechsteAm: "asc" },
+      take: 20,
+    }),
+    db.artikel.findMany({ where: { firmaId: { in: ids }, aktiv: true, mindestbestand: { not: null } }, include: { bestaende: true } }),
   ]);
+  const knapp = mindest
+    .map((a) => ({ a, gesamt: a.bestaende.reduce((s, x) => s + n(x.menge), 0) }))
+    .filter((x) => x.gesamt < n(x.a.mindestbestand));
 
   // Pipeline: Anzahl und Volumen je Status (über die gewählten Firmen summiert)
   const proStatus = new Map<string, { farbe: string; reihenfolge: number; anzahl: number; summe: number }>();
@@ -65,6 +79,38 @@ export default async function Uebersicht() {
           </div>
         )}
       </section>
+
+      {(pruefungen.length > 0 || knapp.length > 0) && (
+        <section className="grid gap-4 lg:grid-cols-2">
+          {pruefungen.length > 0 && (
+            <div className="karte">
+              <h2 className="mb-2 font-semibold">Prüfungen fällig</h2>
+              <ul className="divide-y divide-slate-100 text-sm">
+                {pruefungen.map((p) => (
+                  <li key={p.id} className="flex gap-3 py-1.5">
+                    <span className={`w-24 shrink-0 ${pruefAmpel(p.naechsteAm) === "ueberfaellig" ? "font-medium text-red-700" : "text-amber-700"}`}>{p.naechsteAm ? datum(p.naechsteAm) : ""}</span>
+                    <Link href={`/geraete/${p.geraetId}`} className="flex-1 text-marke">{p.geraet.bezeichnung}</Link>
+                    <span className="text-slate-500">{p.bezeichnung ?? PRUEFART[p.art]}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {knapp.length > 0 && (
+            <div className="karte">
+              <h2 className="mb-2 font-semibold">Unter Mindestbestand</h2>
+              <ul className="divide-y divide-slate-100 text-sm">
+                {knapp.map(({ a, gesamt }) => (
+                  <li key={a.id} className="flex gap-3 py-1.5">
+                    <Link href={`/lager/artikel/${a.id}`} className="flex-1 text-marke">{a.bezeichnung}</Link>
+                    <span className="text-red-700">{gesamt.toLocaleString("de-DE")} / {n(a.mindestbestand).toLocaleString("de-DE")} {a.einheit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="karte">
         <h2 className="mb-3 font-semibold">Letzte Aktivitäten</h2>

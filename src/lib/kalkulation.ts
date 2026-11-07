@@ -48,7 +48,7 @@ export function nummerieren<T extends { art: string }>(positionen: T[]) {
 
 /** Summen eines Angebots inklusive Lohnanteil (§ 35a EStG) und Stunden. */
 export function summen(positionen: Pos[], s: Saetze & { mwstSatz: Zahl }) {
-  let netto = 0, lohn = 0, minuten = 0, materialEk = 0, fremdEk = 0;
+  let netto = 0, lohn = 0, minuten = 0, materialEk = 0, fremdEk = 0, geraete = 0;
   const gruppen: { index: number; summe: number }[] = [];
   positionen.forEach((p, i) => {
     if (p.art === "GRUPPE") { gruppen.push({ index: i, summe: 0 }); return; }
@@ -63,6 +63,7 @@ export function summen(positionen: Pos[], s: Saetze & { mwstSatz: Zahl }) {
     minuten += n(p.minuten) * menge;
     materialEk += n(p.materialEk) * menge;
     fremdEk += n(p.fremdEk) * menge;
+    geraete += n(p.geraete) * menge;
   });
   netto = runden(netto);
   const mwst = runden((netto * n(s.mwstSatz)) / 100);
@@ -75,15 +76,24 @@ export function summen(positionen: Pos[], s: Saetze & { mwstSatz: Zahl }) {
     stunden: Math.round((minuten / 60) * 10) / 10,
     materialEk: runden(materialEk),
     fremdEk: runden(fremdEk),
+    geraete: runden(geraete),
     gruppen: gruppen.map((g) => ({ ...g, summe: runden(g.summe) })),
   };
 }
 
-/** Deutsche Zahleneingabe "1.234,5" → 1234.5 */
+/**
+ * Deutsche Zahleneingabe: "1.234,5" → 1234.5, "1.700" → 1700, "12,5" → 12.5.
+ * Ohne Komma gilt ein Punkt als Tausendertrenner, wenn danach genau drei Ziffern folgen
+ * ("1.700", "200.000"); sonst als Dezimalpunkt ("12.5").
+ */
 export function parseZahl(v: FormDataEntryValue | null | undefined, fallback = 0) {
-  const s = typeof v === "string" ? v.trim() : "";
+  const s = (typeof v === "string" ? v.trim() : "").replace(/[\s\u00a0€%]/g, "");
   if (!s) return fallback;
-  const x = Number(s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s);
+  let t: string;
+  if (s.includes(",")) t = s.replace(/\./g, "").replace(",", ".");
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) t = s.replace(/\./g, "");
+  else t = s;
+  const x = Number(t);
   return Number.isFinite(x) ? x : fallback;
 }
 

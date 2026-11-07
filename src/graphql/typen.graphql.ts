@@ -85,6 +85,41 @@ export const typeDefs = /* GraphQL */ `
     erstelltAm: DateTime! geaendertAm: DateTime!
   }
 
+  enum LagerArt { HAUPTLAGER AUSSENLAGER FAHRZEUG BAUSTELLE }
+  enum BuchungsArt { ZUGANG ABGANG UMBUCHUNG PROJEKT INVENTUR }
+  enum GeraetKategorie { FAHRZEUG MASCHINE ANHAENGER KLEINGERAET WERKZEUG }
+  enum GeraetStatus { VERFUEGBAR IM_EINSATZ WERKSTATT DEFEKT AUSGEMUSTERT }
+  enum PruefArt { UVV HU AU WARTUNG INSPEKTION ELEKTROPRUEFUNG SONSTIGE }
+  enum PruefAmpel { ueberfaellig bald ok offen }
+
+  type Lager { id: ID! name: String! art: LagerArt! adresse: String aktiv: Boolean! }
+  type LagerBestand { lager: Lager! menge: Float! }
+  type Artikel {
+    id: ID! nummer: String! bezeichnung: String! kategorie: String einheit: String!
+    durchschnittEk: Float! letzterEk: Float mindestbestand: Float lieferant: String aktiv: Boolean!
+    bestaende: [LagerBestand!]!
+    gesamtbestand: Float!
+    "Gesamtbestand × Durchschnitts-EK"
+    wert: Float!
+    unterMindestbestand: Boolean!
+  }
+  type LagerBuchung {
+    id: ID! art: BuchungsArt! menge: Float! wert: Float! ekPreis: Float
+    artikel: Artikel! vonLager: Lager nachLager: Lager projekt: Projekt
+    beleg: String notiz: String benutzer: String erstelltAm: DateTime!
+  }
+  type GeraetPruefung { id: ID! art: PruefArt! bezeichnung: String intervallMonate: Int letzteAm: DateTime naechsteAm: DateTime ampel: PruefAmpel! }
+  type Maschinensatz { afa: Float! zins: Float! reparatur: Float! fix: Float! jahreskosten: Float! kalkuliert: Float wirksam: Float! }
+  type GeraetEinsatz { id: ID! datum: DateTime! stunden: Float! kostensatz: Float! kosten: Float! projekt: Projekt! notiz: String }
+  type Geraet {
+    id: ID! inventarNr: String! bezeichnung: String! kategorie: GeraetKategorie! status: GeraetStatus!
+    hersteller: String modell: String seriennummer: String kennzeichen: String baujahr: Int
+    standort: Lager betriebsstunden: Float kmStand: Int notiz: String
+    satz: Maschinensatz!
+    pruefungen: [GeraetPruefung!]!
+    einsaetze(first: Int = 50): [GeraetEinsatz!]!
+  }
+
   type KontaktSeite { gesamt: Int! eintraege: [Kontakt!]! }
   type ProjektSeite { gesamt: Int! eintraege: [Projekt!]! }
   type LeistungSeite { gesamt: Int! eintraege: [Leistung!]! }
@@ -102,6 +137,11 @@ export const typeDefs = /* GraphQL */ `
     leistungen(firmaId: ID, suche: String, nurAktiv: Boolean = true, first: Int = 100, offset: Int = 0): LeistungSeite!
     angebote(firmaId: ID, projektId: ID, status: BelegStatus, art: BelegArt, first: Int = 50, offset: Int = 0): AngebotSeite!
     angebot(id: ID!): Angebot
+    lager(firmaId: ID!): [Lager!]!
+    artikel(firmaId: ID!, suche: String, nurUnterMindestbestand: Boolean = false): [Artikel!]!
+    lagerBuchungen(firmaId: ID!, artikelId: ID, projektId: ID, first: Int = 50, offset: Int = 0): [LagerBuchung!]!
+    geraete(firmaId: ID!, status: GeraetStatus, nurFaellig: Boolean = false): [Geraet!]!
+    geraet(id: ID!): Geraet
   }
 
   input KontaktEingabe {
@@ -132,6 +172,20 @@ export const typeDefs = /* GraphQL */ `
     bedarf: Boolean
   }
 
+  input LagerBuchungEingabe {
+    art: BuchungsArt! artikelId: ID!
+    "Menge; bei INVENTUR der gezählte Bestand"
+    menge: Float!
+    vonLagerId: ID nachLagerId: ID
+    "Pflicht bei ZUGANG"
+    ekPreis: Float
+    "Pflicht bei PROJEKT"
+    projektId: ID
+    beleg: String notiz: String
+  }
+
+  input GeraetEinsatzEingabe { projektId: ID! datum: DateTime! stunden: Float! notiz: String }
+
   type Mutation {
     kontaktAnlegen(eingabe: KontaktEingabe!): Kontakt!
     kontaktAendern(id: ID!, eingabe: KontaktEingabe!): Kontakt!
@@ -143,5 +197,9 @@ export const typeDefs = /* GraphQL */ `
     angebotAnlegen(projektId: ID!): Angebot!
     "Hängt eine Position an einen Angebotsentwurf an"
     angebotPositionHinzufuegen(angebotId: ID!, eingabe: PositionEingabe!): Angebot!
+    "Lagerbewegung buchen; Bestand darf nicht negativ werden"
+    lagerBuchen(eingabe: LagerBuchungEingabe!): LagerBuchung!
+    "Geräteeinsatz auf ein Projekt; der aktuelle Maschinensatz wird eingefroren"
+    geraetEinsatzErfassen(geraetId: ID!, eingabe: GeraetEinsatzEingabe!): GeraetEinsatz!
   }
 `;
