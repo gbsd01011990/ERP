@@ -24,6 +24,11 @@ Schritt 2 ist fertig:
 - Angebot versendet → Projektstatus „Angebot versendet“; angenommen → Auftragsbestätigung als Kopie
 - PDF im CD der jeweiligen Firma über die Generatoren aus den CD-Vorgaben (`pdf/`)
 
+Schnittstelle:
+
+- GraphQL-API unter `/api/graphql` mit API-Schlüsseln je Benutzer (lesen oder lesen und schreiben),
+  GraphiQL-Editor im Browser. Details in [docs/API.md](docs/API.md).
+
 Geplant: Lexware-Anbindung, Plantafel, Handy-App für Kolonnen, HRworks, DATEV,
 Zusatzwerkzeuge (Radar, GAEB, Baumkataster, Pflegeverträge, Fuhrpark).
 

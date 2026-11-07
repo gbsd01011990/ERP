@@ -6,7 +6,13 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { benutzerPflicht, firmenIds } from "@/lib/auth";
 import { FIRMA_COOKIE } from "@/lib/firma";
-import { naechsteNummer } from "@/lib/nummern";
+import { parseZahl } from "@/lib/kalkulation";
+import { kontaktSpeichern as kontaktSpeichernDienst } from "@/lib/dienste/kontakte";
+import {
+  projektAnlegen as projektAnlegenDienst,
+  projektStatusSetzen as projektStatusSetzenDienst,
+  logbuchEintragen as logbuchEintragenDienst,
+} from "@/lib/dienste/projekte";
 
 const leer = (v: FormDataEntryValue | null) => {
   const s = typeof v === "string" ? v.trim() : "";
@@ -24,116 +30,54 @@ export async function firmaWaehlen(form: FormData) {
 
 // ---------- Kontakte ----------
 
-const KontaktSchema = z.object({
-  typ: z.enum(["KUNDE", "LIEFERANT", "PARTNER"]),
-  kategorie: z.enum(["PRIVAT", "GEWERBE", "OEFFENTLICH"]),
-});
+const feld = (form: FormData, k: string) => (typeof form.get(k) === "string" ? String(form.get(k)) : null);
 
 export async function kontaktSpeichern(form: FormData) {
-  await benutzerPflicht(["ADMIN", "BUERO"]);
-  const id = leer(form.get("id"));
-  const { typ, kategorie } = KontaktSchema.parse({ typ: form.get("typ"), kategorie: form.get("kategorie") });
-  const daten = {
-    typ,
-    kategorie,
-    firmenname: leer(form.get("firmenname")),
-    anrede: leer(form.get("anrede")),
-    vorname: leer(form.get("vorname")),
-    nachname: leer(form.get("nachname")),
-    email: leer(form.get("email")),
-    telefon: leer(form.get("telefon")),
-    mobil: leer(form.get("mobil")),
-    leitwegId: leer(form.get("leitwegId")),
-    notiz: leer(form.get("notiz")),
-  };
-  if (!daten.firmenname && !daten.nachname) throw new Error("Firmenname oder Nachname angeben.");
-  const adresse = {
-    strasse: leer(form.get("strasse")),
-    plz: leer(form.get("plz")),
-    ort: leer(form.get("ort")),
-  };
-
-  let kontaktId = id;
-  if (id) {
-    await db.kontakt.update({ where: { id }, data: daten });
-    const haupt = await db.adresse.findFirst({ where: { kontaktId: id, art: "HAUPT" } });
-    if (haupt) await db.adresse.update({ where: { id: haupt.id }, data: adresse });
-    else if (adresse.strasse || adresse.ort) await db.adresse.create({ data: { kontaktId: id, art: "HAUPT", ...adresse } });
-  } else {
-    const k = await db.kontakt.create({
-      data: { ...daten, adressen: adresse.strasse || adresse.ort ? { create: { art: "HAUPT", ...adresse } } : undefined },
-    });
-    kontaktId = k.id;
-  }
+  const b = await benutzerPflicht(["ADMIN", "BUERO"]);
+  const felder = ["firmenname", "anrede", "vorname", "nachname", "email", "telefon", "mobil", "leitwegId", "notiz", "strasse", "plz", "ort"] as const;
+  const eingabe = Object.fromEntries(felder.map((k) => [k, feld(form, k)]));
+  const k = await kontaktSpeichernDienst(b, leer(form.get("id")), {
+    ...eingabe,
+    typ: z.enum(["KUNDE", "LIEFERANT", "PARTNER"]).parse(form.get("typ")),
+    kategorie: z.enum(["PRIVAT", "GEWERBE", "OEFFENTLICH"]).parse(form.get("kategorie")),
+  });
   revalidatePath("/kontakte");
-  redirect(`/kontakte/${kontaktId}`);
+  redirect(`/kontakte/${k.id}`);
 }
 
 // ---------- Projekte ----------
 
 export async function projektAnlegen(form: FormData) {
   const b = await benutzerPflicht(["ADMIN", "BUERO"]);
-  const firmaId = String(form.get("firmaId"));
-  if (!firmenIds(b).includes(firmaId)) throw new Error("Kein Zugriff auf diese Firma.");
-  const kontaktId = String(form.get("kontaktId") ?? "");
-  const titel = leer(form.get("titel"));
-  if (!kontaktId || !titel) throw new Error("Kunde und Titel sind Pflicht.");
-
-  const ersterStatus = await db.pipelineStatus.findFirstOrThrow({ where: { firmaId }, orderBy: { reihenfolge: "asc" } });
   const volumen = leer(form.get("volumen"));
-
-  const projekt = await db.$transaction(async (tx) => {
-    const nummer = await naechsteNummer(tx, firmaId, "PROJEKT");
-    return tx.projekt.create({
-      data: {
-        firmaId,
-        nummer,
-        titel,
-        kontaktId,
-        statusId: ersterStatus.id,
-        typId: leer(form.get("typId")),
-        quelle: leer(form.get("quelle")),
-        beschreibung: leer(form.get("beschreibung")),
-        volumen: volumen ? volumen.replace(/\./g, "").replace(",", ".") : null,
-        baustelleStrasse: leer(form.get("baustelleStrasse")),
-        baustellePlz: leer(form.get("baustellePlz")),
-        baustelleOrt: leer(form.get("baustelleOrt")),
-        verantwortlichId: b.id,
-        logbuch: { create: { art: "SYSTEM", text: "Projekt angelegt", benutzerId: b.id } },
-      },
-    });
+  const p = await projektAnlegenDienst(b, {
+    firmaId: String(form.get("firmaId")),
+    kontaktId: String(form.get("kontaktId") ?? ""),
+    titel: String(form.get("titel") ?? ""),
+    typId: leer(form.get("typId")),
+    quelle: leer(form.get("quelle")),
+    beschreibung: leer(form.get("beschreibung")),
+    volumen: volumen ? parseZahl(volumen) : null,
+    baustelleStrasse: leer(form.get("baustelleStrasse")),
+    baustellePlz: leer(form.get("baustellePlz")),
+    baustelleOrt: leer(form.get("baustelleOrt")),
   });
   revalidatePath("/projekte");
-  redirect(`/projekte/${projekt.id}`);
-}
-
-async function projektPruefen(projektId: string) {
-  const b = await benutzerPflicht();
-  const p = await db.projekt.findUniqueOrThrow({ where: { id: projektId } });
-  if (!firmenIds(b).includes(p.firmaId)) throw new Error("Kein Zugriff.");
-  return { b, p };
+  redirect(`/projekte/${p.id}`);
 }
 
 export async function projektStatusSetzen(form: FormData) {
-  const { b, p } = await projektPruefen(String(form.get("projektId")));
-  const status = await db.pipelineStatus.findUniqueOrThrow({ where: { id: String(form.get("statusId")) } });
-  if (status.firmaId !== p.firmaId || status.id === p.statusId) return;
-  await db.projekt.update({
-    where: { id: p.id },
-    data: {
-      statusId: status.id,
-      logbuch: { create: { art: "STATUS", text: `Status geändert: ${status.name}`, benutzerId: b.id } },
-    },
-  });
+  const b = await benutzerPflicht();
+  const p = await projektStatusSetzenDienst(b, String(form.get("projektId")), String(form.get("statusId")));
   revalidatePath(`/projekte/${p.id}`);
   revalidatePath("/projekte");
 }
 
 export async function logbuchEintragen(form: FormData) {
-  const { b, p } = await projektPruefen(String(form.get("projektId")));
+  const b = await benutzerPflicht();
   const text = leer(form.get("text"));
   if (!text) return;
-  const art = z.enum(["NOTIZ", "ANRUF", "EMAIL", "TERMIN"]).parse(form.get("art") ?? "NOTIZ");
-  await db.logbuchEintrag.create({ data: { projektId: p.id, benutzerId: b.id, art, text } });
-  revalidatePath(`/projekte/${p.id}`);
+  const projektId = String(form.get("projektId"));
+  await logbuchEintragenDienst(b, projektId, z.enum(["NOTIZ", "ANRUF", "EMAIL", "TERMIN"]).parse(form.get("art") ?? "NOTIZ"), text);
+  revalidatePath(`/projekte/${projektId}`);
 }

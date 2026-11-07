@@ -10,7 +10,7 @@ export function FirmenWahl({ firmen, aktiv }: { firmen: Firma[]; aktiv: string }
         name="firma"
         defaultValue={aktiv}
         onChange={(e) => e.currentTarget.form?.requestSubmit()}
-        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+        className="max-w-[12rem] rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
         aria-label="Firma wählen"
       >
         {firmen.length > 1 && <option value="alle">Alle Firmen</option>}

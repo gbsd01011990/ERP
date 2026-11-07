@@ -8,8 +8,7 @@ import { benutzerPflicht, firmenIds } from "@/lib/auth";
 import { naechsteNummer } from "@/lib/nummern";
 import { nettoAktualisieren } from "@/lib/angebot";
 import { parseZahl, aufmassSumme } from "@/lib/kalkulation";
-import { VORLAGEN, briefanrede } from "@/lib/vorlagen";
-import { datum } from "@/lib/format";
+import { angebotAnlegen as angebotAnlegenDienst, positionHinzufuegen as positionHinzufuegenDienst } from "@/lib/dienste/angebote";
 
 const text = (v: FormDataEntryValue | null) => {
   const s = typeof v === "string" ? v.trim() : "";
@@ -50,40 +49,7 @@ async function projektStatusVor(tx: Prisma.TransactionClient, projektId: string,
 
 export async function angebotAnlegen(form: FormData) {
   const b = await benutzerPflicht(["ADMIN", "BUERO"]);
-  const projekt = await db.projekt.findUniqueOrThrow({
-    where: { id: String(form.get("projektId")) },
-    include: { firma: true, kontakt: true },
-  });
-  if (!firmenIds(b).includes(projekt.firmaId)) throw new Error("Kein Zugriff.");
-  const f = projekt.firma;
-  const gueltigBis = new Date(Date.now() + f.angebotGueltigTage * 864e5);
-  const v = VORLAGEN[f.kuerzel] ?? VORLAGEN.GBSD;
-
-  const a = await db.$transaction(async (tx) => {
-    const nummer = await naechsteNummer(tx, f.id, "ANGEBOT");
-    const neu = await tx.angebot.create({
-      data: {
-        firmaId: f.id,
-        projektId: projekt.id,
-        nummer,
-        betreff: projekt.baustelleOrt
-          ? `BV: ${[projekt.baustelleStrasse, projekt.baustelleOrt].filter(Boolean).join(", ")} – ${projekt.titel}`
-          : projekt.titel,
-        anrede: briefanrede(projekt.kontakt),
-        einleitung: v.einleitung(datum(gueltigBis)),
-        vorbemerkung: v.vorbemerkung ?? null,
-        schlusstext: v.schlusstext ?? null,
-        gueltigBis,
-        mwstSatz: f.mwstSatz,
-        stundensatz: f.stundensatz,
-        materialAufschlag: f.materialAufschlag,
-        fremdAufschlag: f.fremdAufschlag,
-        erstelltVonId: b.id,
-      },
-    });
-    await tx.logbuchEintrag.create({ data: { projektId: projekt.id, benutzerId: b.id, art: "SYSTEM", text: `Angebot ${nummer} angelegt` } });
-    return neu;
-  });
+  const a = await angebotAnlegenDienst(b, String(form.get("projektId")));
   redirect(`/angebote/${a.id}`);
 }
 
@@ -113,30 +79,15 @@ export async function angebotKopfSpeichern(form: FormData) {
 // ------------------------------------------------------------ Positionen
 
 export async function positionHinzufuegen(form: FormData) {
-  const { a } = await angebotPruefen(String(form.get("angebotId")));
-  const art = z.enum(["GRUPPE", "POSITION", "TEXT"]).parse(form.get("art"));
-  const letzte = await db.angebotsPosition.findFirst({ where: { angebotId: a.id }, orderBy: { reihenfolge: "desc" } });
-  const reihenfolge = (letzte?.reihenfolge ?? 0) + 10;
-
-  const leistungId = text(form.get("leistungId"));
-  if (art === "POSITION" && leistungId) {
-    const l = await db.leistung.findUniqueOrThrow({ where: { id: leistungId } });
-    if (l.firmaId !== a.firmaId) throw new Error("Leistung gehört zu einer anderen Firma.");
-    await db.angebotsPosition.create({
-      data: {
-        angebotId: a.id, reihenfolge, art, leistungId: l.id,
-        kurztext: l.kurztext, langtext: l.langtext, einheit: l.einheit,
-        menge: parseZahl(form.get("menge"), 1),
-        minuten: l.minuten, materialEk: l.materialEk, geraete: l.geraete, fremdEk: l.fremdEk,
-        einzelpreis: l.festpreis ?? 0, preisFest: l.festpreis != null,
-      },
-    });
-  } else {
-    const standard = { GRUPPE: "Neuer Titel", POSITION: "Neue Position", TEXT: "Hinweis" }[art];
-    await db.angebotsPosition.create({ data: { angebotId: a.id, reihenfolge, art, kurztext: text(form.get("kurztext")) ?? standard } });
-  }
-  await nettoAktualisieren(a.id);
-  neuLaden(a.id);
+  const b = await benutzerPflicht(["ADMIN", "BUERO"]);
+  const angebotId = String(form.get("angebotId"));
+  await positionHinzufuegenDienst(b, angebotId, {
+    art: z.enum(["GRUPPE", "POSITION", "TEXT"]).parse(form.get("art")),
+    leistungId: text(form.get("leistungId")),
+    kurztext: text(form.get("kurztext")),
+    menge: parseZahl(form.get("menge"), 1),
+  });
+  neuLaden(angebotId);
 }
 
 export async function positionSpeichern(form: FormData) {

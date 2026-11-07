@@ -89,6 +89,7 @@ model Benutzer {
   logbuch      LogbuchEintrag[]
   projekte     Projekt[] @relation("Verantwortlich")
   angebote     Angebot[]
+  apiSchluessel ApiSchluessel[]
 }
 
 model Zugriff {
@@ -377,4 +378,19 @@ model AufmassZeile {
   position    AngebotsPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
 
   @@index([positionId, reihenfolge])
+}
+
+/// API-Schlüssel für die GraphQL-Schnittstelle. Gespeichert wird nur der SHA-256-Hash;
+/// der Klartext wird beim Anlegen einmal angezeigt. Rechte = Rechte des Benutzers.
+model ApiSchluessel {
+  id            String    @id @default(cuid())
+  benutzerId    String
+  name          String
+  hash          String    @unique
+  anfang        String    // erste Zeichen zur Wiedererkennung, z. B. "erp_a1b2c3"
+  nurLesen      Boolean   @default(false)
+  letzteNutzung DateTime?
+  widerrufenAm  DateTime?
+  createdAt     DateTime  @default(now())
+  benutzer      Benutzer  @relation(fields: [benutzerId], references: [id], onDelete: Cascade)
 }
