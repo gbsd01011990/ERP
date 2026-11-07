@@ -27,7 +27,13 @@ export function KontaktFormular({ kontakt }: { kontakt?: Kontakt & { adressen: A
           </select>
         </div>
         <div className="sm:col-span-2">{feld("firmenname", "Firma / Behörde", kontakt?.firmenname)}</div>
-        {feld("anrede", "Anrede", kontakt?.anrede)}
+        <div>
+          <label className="label" htmlFor="anrede">Anrede</label>
+          <select id="anrede" name="anrede" defaultValue={kontakt?.anrede ?? ""} className="eingabe">
+            {["", "Frau", "Herr", "Familie", "Divers"].map((a) => <option key={a} value={a}>{a || "–"}</option>)}
+            {kontakt?.anrede && !["Frau", "Herr", "Familie", "Divers"].includes(kontakt.anrede) && <option value={kontakt.anrede}>{kontakt.anrede}</option>}
+          </select>
+        </div>
         <div />
         {feld("vorname", "Vorname", kontakt?.vorname)}
         {feld("nachname", "Nachname", kontakt?.nachname)}

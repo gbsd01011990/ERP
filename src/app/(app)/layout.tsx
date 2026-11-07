@@ -7,7 +7,9 @@ import { FirmenWahl } from "./firmen-wahl";
 const NAV = [
   { href: "/", text: "Übersicht" },
   { href: "/projekte", text: "Projekte" },
+  { href: "/angebote", text: "Angebote" },
   { href: "/kontakte", text: "Kontakte" },
+  { href: "/leistungen", text: "Leistungen" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

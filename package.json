@@ -10,7 +10,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "import:hero": "tsx scripts/hero-import.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test scripts/tests/*.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

@@ -57,6 +57,12 @@ model Firma {
   web            String?
   farbe          String   @default("#2f5d3a")
   projektPraefix String
+  // Kalkulationssätze (Angebotsmodul)
+  stundensatz        Decimal @default(58) @db.Decimal(8, 2)  // €/h Lohn inkl. Gemeinkosten
+  materialAufschlag  Decimal @default(20) @db.Decimal(5, 2)  // % auf Material-EK
+  fremdAufschlag     Decimal @default(15) @db.Decimal(5, 2)  // % auf Fremdleistung
+  mwstSatz           Decimal @default(19) @db.Decimal(4, 2)
+  angebotGueltigTage Int     @default(14)
   createdAt      DateTime @default(now())
 
   zugriffe     Zugriff[]
@@ -65,6 +71,8 @@ model Firma {
   status       PipelineStatus[]
   nummernkreise Nummernkreis[]
   kontaktIds   KontaktFremdId[]
+  leistungen   Leistung[]
+  angebote     Angebot[]
 }
 
 model Benutzer {
@@ -80,6 +88,7 @@ model Benutzer {
   sitzungen    Sitzung[]
   logbuch      LogbuchEintrag[]
   projekte     Projekt[] @relation("Verantwortlich")
+  angebote     Angebot[]
 }
 
 model Zugriff {
@@ -228,6 +237,7 @@ model Projekt {
   kontakt        Kontakt          @relation(fields: [kontaktId], references: [id])
   verantwortlich Benutzer?        @relation("Verantwortlich", fields: [verantwortlichId], references: [id])
   logbuch        LogbuchEintrag[]
+  angebote       Angebot[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -245,4 +255,126 @@ model LogbuchEintrag {
   benutzer   Benutzer?  @relation(fields: [benutzerId], references: [id])
 
   @@index([projektId, createdAt])
+}
+
+// ---------------------------------------------------------------- Angebote
+
+enum BelegArt {
+  ANGEBOT
+  AUFTRAGSBESTAETIGUNG
+}
+
+enum BelegStatus {
+  ENTWURF
+  VERSENDET
+  ANGENOMMEN
+  ABGELEHNT
+  ERSETZT
+}
+
+enum PositionsArt {
+  GRUPPE
+  POSITION
+  TEXT
+}
+
+/// Leistungsstamm je Firma. Einzelpreis ergibt sich aus der Kalkulation oder ist fest gesetzt.
+model Leistung {
+  id            String   @id @default(cuid())
+  firmaId       String
+  nummer        String
+  kategorie     String?
+  kurztext      String
+  langtext      String?
+  einheit       String   @default("Stk.")
+  minuten       Decimal  @default(0) @db.Decimal(10, 2) // Lohnminuten je Einheit
+  materialEk    Decimal  @default(0) @db.Decimal(12, 2)
+  geraete       Decimal  @default(0) @db.Decimal(12, 2) // Maschinen/Geräte je Einheit (Verrechnungspreis)
+  fremdEk       Decimal  @default(0) @db.Decimal(12, 2)
+  festpreis     Decimal? @db.Decimal(12, 2)
+  aktiv         Boolean  @default(true)
+  lexwareId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  firma         Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  positionen    AngebotsPosition[]
+
+  @@unique([firmaId, nummer])
+}
+
+model Angebot {
+  id           String      @id @default(cuid())
+  firmaId      String
+  projektId    String
+  art          BelegArt    @default(ANGEBOT)
+  nummer       String
+  version      Int         @default(1)
+  status       BelegStatus @default(ENTWURF)
+  datum        DateTime    @default(now())
+  gueltigBis   DateTime?
+  betreff      String
+  anrede       String?
+  einleitung   String?
+  vorbemerkung String?
+  schlusstext  String?
+  mwstSatz     Decimal     @db.Decimal(4, 2)
+  stundensatz  Decimal     @db.Decimal(8, 2)  // Sätze zum Zeitpunkt der Erstellung einfrieren
+  materialAufschlag Decimal @db.Decimal(5, 2)
+  fremdAufschlag    Decimal @db.Decimal(5, 2)
+  netto        Decimal     @default(0) @db.Decimal(12, 2)
+  vorgaengerId String?
+  erstelltVonId String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  firma       Firma              @relation(fields: [firmaId], references: [id])
+  projekt     Projekt            @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  erstelltVon Benutzer?          @relation(fields: [erstelltVonId], references: [id])
+  vorgaenger  Angebot?           @relation("Folge", fields: [vorgaengerId], references: [id])
+  nachfolger  Angebot[]          @relation("Folge")
+  positionen  AngebotsPosition[]
+
+  @@unique([firmaId, nummer, version])
+  @@index([projektId])
+}
+
+model AngebotsPosition {
+  id          String       @id @default(cuid())
+  angebotId   String
+  reihenfolge Int
+  art         PositionsArt @default(POSITION)
+  kurztext    String
+  langtext    String?
+  menge       Decimal      @default(1) @db.Decimal(12, 3)
+  einheit     String       @default("Stk.")
+  minuten     Decimal      @default(0) @db.Decimal(10, 2)
+  materialEk  Decimal      @default(0) @db.Decimal(12, 2)
+  geraete     Decimal      @default(0) @db.Decimal(12, 2)
+  fremdEk     Decimal      @default(0) @db.Decimal(12, 2)
+  einzelpreis Decimal      @default(0) @db.Decimal(12, 2)
+  preisFest   Boolean      @default(false) // true: Einzelpreis von Hand gesetzt, nicht aus Kalkulation
+  bedarf      Boolean      @default(false) // Bedarfs-/Alternativposition: nicht in der Summe
+  leistungId  String?
+  angebot     Angebot      @relation(fields: [angebotId], references: [id], onDelete: Cascade)
+  leistung    Leistung?    @relation(fields: [leistungId], references: [id])
+  aufmass     AufmassZeile[]
+
+  @@index([angebotId, reihenfolge])
+}
+
+/// Aufmaßzeile: Anzahl × Länge × Breite × Höhe (leere Faktoren zählen als 1). Abzug zieht ab.
+model AufmassZeile {
+  id          String           @id @default(cuid())
+  positionId  String
+  reihenfolge Int
+  text        String?
+  anzahl      Decimal?         @db.Decimal(12, 3)
+  laenge      Decimal?         @db.Decimal(12, 3)
+  breite      Decimal?         @db.Decimal(12, 3)
+  hoehe       Decimal?         @db.Decimal(12, 3)
+  abzug       Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  position    AngebotsPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@index([positionId, reihenfolge])
 }

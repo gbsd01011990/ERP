@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { benutzerPflicht, firmenIds } from "@/lib/auth";
 import { euro, datum, datumZeit, kontaktName } from "@/lib/format";
 import { logbuchEintragen, projektStatusSetzen } from "../../actions";
+import { angebotAnlegen } from "../../angebote/actions";
 
 const ART_TEXT = { NOTIZ: "Notiz", ANRUF: "Anruf", EMAIL: "E-Mail", TERMIN: "Termin", STATUS: "Status", SYSTEM: "System" } as const;
 
@@ -19,6 +20,7 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
       verantwortlich: true,
       kontakt: { include: { adressen: true } },
       logbuch: { orderBy: { createdAt: "desc" }, include: { benutzer: { select: { name: true } } } },
+      angebote: { orderBy: [{ createdAt: "asc" }] },
     },
   });
   if (!p || !firmenIds(b).includes(p.firmaId)) notFound();
@@ -70,9 +72,25 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
           {p.heroId && <div className="text-slate-400">HERO-ID {p.heroId}</div>}
           {p.beschreibung && <p className="whitespace-pre-line pt-2">{p.beschreibung}</p>}
         </section>
-        <section className="karte text-sm text-slate-500">
-          <h2 className="mb-1 font-semibold text-slate-800">Dokumente</h2>
-          Angebote, Aufmaß und Rechnungen (Lexware) folgen im nächsten Schritt.
+        <section className="karte space-y-2 text-sm">
+          <div className="flex items-center">
+            <h2 className="font-semibold">Dokumente</h2>
+            {b.rolle !== "KOLONNE" && (
+              <form action={angebotAnlegen} className="ml-auto">
+                <input type="hidden" name="projektId" value={p.id} />
+                <button className="btn-hell py-1">+ Angebot</button>
+              </form>
+            )}
+          </div>
+          {p.angebote.map((a) => (
+            <Link key={a.id} href={`/angebote/${a.id}`} className="flex gap-2 rounded px-1 py-1 hover:bg-slate-50">
+              <span className="font-medium text-marke">{a.art === "ANGEBOT" ? "Angebot" : "AB"} {a.nummer}{a.version > 1 ? `-${a.version}` : ""}</span>
+              <span className="text-slate-500">{({ ENTWURF: "Entwurf", VERSENDET: "versendet", ANGENOMMEN: "angenommen", ABGELEHNT: "abgelehnt", ERSETZT: "ersetzt" } as const)[a.status]}</span>
+              <span className="ml-auto">{euro(a.netto)}</span>
+            </Link>
+          ))}
+          {p.angebote.length === 0 && <p className="text-slate-500">Noch keine Angebote.</p>}
+          <p className="pt-2 text-xs text-slate-400">Rechnungen über Lexware folgen im nächsten Schritt.</p>
         </section>
       </div>
 

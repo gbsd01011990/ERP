@@ -15,8 +15,27 @@ Schritt 1 ist fertig:
 - Projektnummern aus Nummernkreisen je Firma (GB-001, RD-001, KD-001)
 - Übernahme von Kontakten und Projekten aus HERO (`scripts/hero-import.ts`)
 
-Geplant: Angebote/Aufmaß mit CD-PDF, Lexware-Anbindung, Plantafel, Handy-App für Kolonnen,
-HRworks, DATEV, Zusatzwerkzeuge (Radar, GAEB, Baumkataster, Pflegeverträge, Fuhrpark).
+Schritt 2 ist fertig:
+
+- Leistungsstamm je Firma mit Kalkulation (Lohnminuten, Material-EK, Gerät, Fremdleistung) oder Festpreis
+- Angebote mit Titeln, Positionen, Hinweistexten, Bedarfspositionen und Versionen
+- Kalkulation je Position, Summen mit Stunden, Lohnanteil nach § 35a und Deckungsbeitrag
+- Aufmaß je Position (Anzahl × Länge × Breite × Höhe, Abzüge); die Summe wird zur Menge
+- Angebot versendet → Projektstatus „Angebot versendet“; angenommen → Auftragsbestätigung als Kopie
+- PDF im CD der jeweiligen Firma über die Generatoren aus den CD-Vorgaben (`pdf/`)
+
+Geplant: Lexware-Anbindung, Plantafel, Handy-App für Kolonnen, HRworks, DATEV,
+Zusatzwerkzeuge (Radar, GAEB, Baumkataster, Pflegeverträge, Fuhrpark).
+
+## PDF-Erzeugung
+
+`pdf/erzeugen.py` nimmt die Belegdaten als JSON und baut das Blatt mit dem Generator der Firma:
+`pdf/gbsd/` (GBSD), `pdf/rd/` (Riedrich und Dremel, Gärtner von Eden) und `pdf/kud/` (Kusche und Dremel).
+Der Server braucht dafür Python 3 mit `reportlab` und die Liberation-Schriften.
+
+Die Unterschrift von Thorsten Dremel liegt bewusst nicht im Repository. Wer sie unter
+Angeboten von Riedrich und Dremel haben möchte, legt `Unterschrift_Thorsten_Dremel.png`
+auf dem Server in `pdf/rd/dokument/` ab.
 
 ## Technik
 
@@ -30,6 +49,7 @@ cp .env.example .env            # DATABASE_URL, ADMIN_EMAIL, ADMIN_PASSWORT eint
 npm run db:push                 # Tabellen anlegen
 npm run db:seed                 # Firmen, Pipeline, Nummernkreise, erster Admin
 npm run dev                     # http://localhost:3000
+npm test                        # Kalkulationstests
 ```
 
 ## Daten aus HERO übernehmen
