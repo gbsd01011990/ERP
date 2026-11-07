@@ -1,0 +1,248 @@
+// Datenmodell ERP – drei Firmen in einer App.
+// Fremd-IDs (heroId, lexwareId) halten die Verbindung zu HERO und Lexware.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rolle {
+  ADMIN
+  BUERO
+  KOLONNE
+}
+
+enum KontaktTyp {
+  KUNDE
+  LIEFERANT
+  PARTNER
+}
+
+enum KontaktKategorie {
+  PRIVAT
+  GEWERBE
+  OEFFENTLICH
+}
+
+enum AdressArt {
+  HAUPT
+  RECHNUNG
+  BAUSTELLE
+  SONSTIGE
+}
+
+enum LogbuchArt {
+  NOTIZ
+  ANRUF
+  EMAIL
+  TERMIN
+  STATUS
+  SYSTEM
+}
+
+model Firma {
+  id             String   @id @default(cuid())
+  kuerzel        String   @unique // GBSD, RD, KUD
+  name           String
+  zusatz         String?
+  strasse        String?
+  plz            String?
+  ort            String?
+  telefon        String?
+  email          String?
+  web            String?
+  farbe          String   @default("#2f5d3a")
+  projektPraefix String
+  createdAt      DateTime @default(now())
+
+  zugriffe     Zugriff[]
+  projekte     Projekt[]
+  projektTypen ProjektTyp[]
+  status       PipelineStatus[]
+  nummernkreise Nummernkreis[]
+  kontaktIds   KontaktFremdId[]
+}
+
+model Benutzer {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwortHash String
+  rolle        Rolle     @default(BUERO)
+  aktiv        Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+
+  zugriffe     Zugriff[]
+  sitzungen    Sitzung[]
+  logbuch      LogbuchEintrag[]
+  projekte     Projekt[] @relation("Verantwortlich")
+}
+
+model Zugriff {
+  benutzerId String
+  firmaId    String
+  benutzer   Benutzer @relation(fields: [benutzerId], references: [id], onDelete: Cascade)
+  firma      Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+
+  @@id([benutzerId, firmaId])
+}
+
+model Sitzung {
+  id         String   @id // zufälliges Token (gehasht gespeichert)
+  benutzerId String
+  ablauf     DateTime
+  benutzer   Benutzer @relation(fields: [benutzerId], references: [id], onDelete: Cascade)
+}
+
+/// Kundenkartei ist firmenübergreifend; Fremd-IDs je Firma in KontaktFremdId.
+model Kontakt {
+  id           String           @id @default(cuid())
+  nummer       String?          @unique
+  typ          KontaktTyp       @default(KUNDE)
+  kategorie    KontaktKategorie @default(PRIVAT)
+  firmenname   String?
+  anrede       String?
+  vorname      String?
+  nachname     String?
+  email        String?
+  telefon      String?
+  mobil        String?
+  web          String?
+  leitwegId    String?
+  notiz        String?
+  geloescht    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  adressen         Adresse[]
+  ansprechpartner  Ansprechpartner[]
+  projekte         Projekt[]
+  fremdIds         KontaktFremdId[]
+
+  @@index([nachname])
+  @@index([firmenname])
+}
+
+model KontaktFremdId {
+  id        String  @id @default(cuid())
+  kontaktId String
+  firmaId   String
+  system    String  // "HERO" | "LEXWARE"
+  fremdId   String
+  kontakt   Kontakt @relation(fields: [kontaktId], references: [id], onDelete: Cascade)
+  firma     Firma   @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+
+  @@unique([firmaId, system, fremdId])
+  @@unique([kontaktId, firmaId, system])
+}
+
+model Adresse {
+  id        String    @id @default(cuid())
+  kontaktId String
+  art       AdressArt @default(HAUPT)
+  strasse   String?
+  zusatz    String?
+  plz       String?
+  ort       String?
+  land      String    @default("DE")
+  lat       Float?
+  lng       Float?
+  kontakt   Kontakt   @relation(fields: [kontaktId], references: [id], onDelete: Cascade)
+}
+
+model Ansprechpartner {
+  id        String  @id @default(cuid())
+  kontaktId String
+  name      String
+  funktion  String?
+  telefon   String?
+  email     String?
+  kontakt   Kontakt @relation(fields: [kontaktId], references: [id], onDelete: Cascade)
+}
+
+model ProjektTyp {
+  id       String    @id @default(cuid())
+  firmaId  String
+  name     String
+  heroId   Int?
+  firma    Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  projekte Projekt[]
+
+  @@unique([firmaId, name])
+}
+
+model PipelineStatus {
+  id           String    @id @default(cuid())
+  firmaId      String
+  name         String
+  reihenfolge  Int
+  farbe        String    @default("#64748b")
+  abgeschlossen Boolean  @default(false)
+  verloren     Boolean   @default(false)
+  firma        Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  projekte     Projekt[]
+
+  @@unique([firmaId, name])
+}
+
+model Nummernkreis {
+  id       String @id @default(cuid())
+  firmaId  String
+  art      String // PROJEKT, ANGEBOT, AUFTRAG, AUFMASS ...
+  praefix  String
+  naechste Int    @default(1)
+  stellen  Int    @default(3)
+  firma    Firma  @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+
+  @@unique([firmaId, art])
+}
+
+model Projekt {
+  id               String   @id @default(cuid())
+  firmaId          String
+  nummer           String
+  titel            String
+  beschreibung     String?
+  typId            String?
+  statusId         String
+  kontaktId        String
+  verantwortlichId String?
+  quelle           String?  // Empfehlung, Website, Ausschreibung ...
+  volumen          Decimal? @db.Decimal(12, 2)
+  baustelleStrasse String?
+  baustellePlz     String?
+  baustelleOrt     String?
+  lat              Float?
+  lng              Float?
+  heroId           Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  firma          Firma            @relation(fields: [firmaId], references: [id])
+  typ            ProjektTyp?      @relation(fields: [typId], references: [id])
+  status         PipelineStatus   @relation(fields: [statusId], references: [id])
+  kontakt        Kontakt          @relation(fields: [kontaktId], references: [id])
+  verantwortlich Benutzer?        @relation("Verantwortlich", fields: [verantwortlichId], references: [id])
+  logbuch        LogbuchEintrag[]
+
+  @@unique([firmaId, nummer])
+  @@unique([firmaId, heroId])
+  @@index([statusId])
+}
+
+model LogbuchEintrag {
+  id         String     @id @default(cuid())
+  projektId  String
+  benutzerId String?
+  art        LogbuchArt @default(NOTIZ)
+  text       String
+  createdAt  DateTime   @default(now())
+  projekt    Projekt    @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  benutzer   Benutzer?  @relation(fields: [benutzerId], references: [id])
+
+  @@index([projektId, createdAt])
+}

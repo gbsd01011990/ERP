@@ -1,0 +1,102 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { benutzerPflicht, firmenIds } from "@/lib/auth";
+import { euro, datum, datumZeit, kontaktName } from "@/lib/format";
+import { logbuchEintragen, projektStatusSetzen } from "../../actions";
+
+const ART_TEXT = { NOTIZ: "Notiz", ANRUF: "Anruf", EMAIL: "E-Mail", TERMIN: "Termin", STATUS: "Status", SYSTEM: "System" } as const;
+
+export default async function ProjektSeite({ params }: { params: Promise<{ id: string }> }) {
+  const b = await benutzerPflicht();
+  const { id } = await params;
+  const p = await db.projekt.findUnique({
+    where: { id },
+    include: {
+      firma: true,
+      typ: true,
+      status: true,
+      verantwortlich: true,
+      kontakt: { include: { adressen: true } },
+      logbuch: { orderBy: { createdAt: "desc" }, include: { benutzer: { select: { name: true } } } },
+    },
+  });
+  if (!p || !firmenIds(b).includes(p.firmaId)) notFound();
+  const alleStatus = await db.pipelineStatus.findMany({ where: { firmaId: p.firmaId }, orderBy: { reihenfolge: "asc" } });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start gap-3">
+        <div>
+          <div className="text-sm text-slate-500">{p.firma.name} · {p.nummer}{p.typ ? ` · ${p.typ.name}` : ""}</div>
+          <h1 className="h1">{p.titel}</h1>
+        </div>
+        <form key={p.statusId} action={projektStatusSetzen} className="ml-auto flex gap-2">
+          <input type="hidden" name="projektId" value={p.id} />
+          <select name="statusId" defaultValue={p.statusId} className="eingabe w-auto">
+            {alleStatus.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <button className="btn-hell">Status setzen</button>
+        </form>
+      </div>
+
+      {/* Pipeline-Fortschritt */}
+      <ol className="flex flex-wrap gap-1 text-xs">
+        {alleStatus.filter((s) => !s.verloren).map((s) => (
+          <li key={s.id} className="rounded px-2 py-1" style={s.reihenfolge <= p.status.reihenfolge ? { background: s.farbe, color: "white" } : { background: "#e2e8f0" }}>{s.name}</li>
+        ))}
+      </ol>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <section className="karte space-y-2 text-sm">
+          <h2 className="font-semibold">Kunde</h2>
+          <Link href={`/kontakte/${p.kontakt.id}`} className="font-medium text-marke">{kontaktName(p.kontakt)}</Link>
+          {p.kontakt.telefon && <div>Tel. <a href={`tel:${p.kontakt.telefon}`}>{p.kontakt.telefon}</a></div>}
+          {p.kontakt.mobil && <div>Mobil <a href={`tel:${p.kontakt.mobil}`}>{p.kontakt.mobil}</a></div>}
+          {p.kontakt.email && <div><a href={`mailto:${p.kontakt.email}`}>{p.kontakt.email}</a></div>}
+          <h2 className="pt-2 font-semibold">Baustelle</h2>
+          <div>{[p.baustelleStrasse, [p.baustellePlz, p.baustelleOrt].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "–"}</div>
+          {(p.baustelleOrt || p.baustelleStrasse) && (
+            <a className="text-marke" target="_blank" rel="noreferrer"
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([p.baustelleStrasse, p.baustellePlz, p.baustelleOrt].filter(Boolean).join(" "))}`}>Route öffnen</a>
+          )}
+        </section>
+        <section className="karte space-y-1 text-sm">
+          <h2 className="mb-1 font-semibold">Eckdaten</h2>
+          <div>Volumen: {euro(p.volumen)}</div>
+          <div>Quelle: {p.quelle ?? "–"}</div>
+          <div>Verantwortlich: {p.verantwortlich?.name ?? "–"}</div>
+          <div>Angelegt: {datum(p.createdAt)}</div>
+          {p.heroId && <div className="text-slate-400">HERO-ID {p.heroId}</div>}
+          {p.beschreibung && <p className="whitespace-pre-line pt-2">{p.beschreibung}</p>}
+        </section>
+        <section className="karte text-sm text-slate-500">
+          <h2 className="mb-1 font-semibold text-slate-800">Dokumente</h2>
+          Angebote, Aufmaß und Rechnungen (Lexware) folgen im nächsten Schritt.
+        </section>
+      </div>
+
+      <section className="karte">
+        <h2 className="mb-3 font-semibold">Logbuch</h2>
+        <form action={logbuchEintragen} className="mb-4 flex flex-wrap gap-2">
+          <input type="hidden" name="projektId" value={p.id} />
+          <select name="art" className="eingabe w-auto">
+            {(["NOTIZ", "ANRUF", "EMAIL", "TERMIN"] as const).map((a) => <option key={a} value={a}>{ART_TEXT[a]}</option>)}
+          </select>
+          <input name="text" required placeholder="Eintrag …" className="eingabe min-w-0 flex-1" />
+          <button className="btn">Speichern</button>
+        </form>
+        <ul className="divide-y divide-slate-100 text-sm">
+          {p.logbuch.map((l) => (
+            <li key={l.id} className="flex flex-wrap gap-x-3 py-2">
+              <span className="w-28 shrink-0 text-slate-400">{datumZeit(l.createdAt)}</span>
+              <span className="w-16 shrink-0 text-xs uppercase text-slate-500">{ART_TEXT[l.art]}</span>
+              <span className="flex-1 whitespace-pre-line">{l.text}</span>
+              <span className="text-slate-400">{l.benutzer?.name}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
