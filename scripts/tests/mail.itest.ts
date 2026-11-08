@@ -87,7 +87,8 @@ test("Microsoft-Anbindung: Zugang, Postfächer, Abruf, Zuordnung, Versand", asyn
   const b = { ...admin, zugriffe: admin.zugriffe.filter((z) => z.firmaId === firma.id), mandant: firma };
   const vorher = { msTenantId: firma.msTenantId, msClientId: firma.msClientId, msClientSecret: firma.msClientSecret };
 
-  // Testdaten
+  // Reste früherer Läufe entfernen, dann Testdaten anlegen
+  await db.postfach.deleteMany({ where: { firmaId: firma.id, adresse: { endsWith: "@gbsd-test.de" } } });
   const kontakt = await db.kontakt.create({ data: { nachname: "Mailtest", email: "kunde@example.de" } });
   const status = await db.pipelineStatus.findFirstOrThrow({ where: { firmaId: firma.id, abgeschlossen: false } });
   const projekt = await db.projekt.create({ data: { firmaId: firma.id, nummer: `MT-${jetzt}`, titel: "Mailtest", kontaktId: kontakt.id, statusId: status.id } });
