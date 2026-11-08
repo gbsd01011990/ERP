@@ -41,7 +41,7 @@ export default async function Kontakte({ searchParams }: Props) {
       <form className="flex flex-wrap gap-2">
         <input name="q" defaultValue={q} placeholder="Name, Firma, Ort, E-Mail" className="eingabe max-w-md" />
         <select name="typ" defaultValue={typ ?? ""} className="eingabe w-auto">
-          <option value="">Alle Typen</option><option value="KUNDE">Kunden</option><option value="LIEFERANT">Lieferanten</option><option value="PARTNER">Partner</option>
+          <option value="">Alle Typen</option><option value="KUNDE">Kunden</option><option value="LIEFERANT">Lieferanten</option><option value="PARTNER">Partner</option><option value="MITARBEITER">Mitarbeiter</option>
         </select>
         <button className="btn-hell">Suchen</button>
       </form>

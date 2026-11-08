@@ -4,7 +4,7 @@ export const typeDefs = /* GraphQL */ `
   scalar DateTime
 
   enum Rolle { ADMIN BUERO KOLONNE }
-  enum KontaktTyp { KUNDE LIEFERANT PARTNER }
+  enum KontaktTyp { KUNDE LIEFERANT PARTNER MITARBEITER }
   enum KontaktKategorie { PRIVAT GEWERBE OEFFENTLICH }
   enum AdressArt { HAUPT RECHNUNG BAUSTELLE SONSTIGE }
   enum LogbuchArt { NOTIZ ANRUF EMAIL TERMIN STATUS SYSTEM }

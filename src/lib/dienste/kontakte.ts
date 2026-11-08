@@ -7,7 +7,7 @@ import { rollePruefen } from "./zugriff";
 const leer = (s: string | null | undefined) => (s == null || s.trim() === "" ? null : s.trim());
 
 export const KontaktEingabe = z.object({
-  typ: z.enum(["KUNDE", "LIEFERANT", "PARTNER"]).default("KUNDE"),
+  typ: z.enum(["KUNDE", "LIEFERANT", "PARTNER", "MITARBEITER"]).default("KUNDE"),
   kategorie: z.enum(["PRIVAT", "GEWERBE", "OEFFENTLICH"]).default("PRIVAT"),
   firmenname: z.string().nullish(),
   anrede: z.string().nullish(),

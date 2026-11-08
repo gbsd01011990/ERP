@@ -17,7 +17,7 @@ export function KontaktFormular({ kontakt }: { kontakt?: Kontakt & { adressen: A
         <div>
           <label className="label">Typ</label>
           <select name="typ" defaultValue={kontakt?.typ ?? "KUNDE"} className="eingabe">
-            <option value="KUNDE">Kunde</option><option value="LIEFERANT">Lieferant</option><option value="PARTNER">Partner</option>
+            <option value="KUNDE">Kunde</option><option value="LIEFERANT">Lieferant</option><option value="PARTNER">Partner</option><option value="MITARBEITER">Mitarbeiter</option>
           </select>
         </div>
         <div>

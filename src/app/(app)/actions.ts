@@ -26,7 +26,7 @@ export async function kontaktSpeichern(form: FormData) {
   const eingabe = Object.fromEntries(felder.map((k) => [k, feld(form, k)]));
   const k = await kontaktSpeichernDienst(b, leer(form.get("id")), {
     ...eingabe,
-    typ: z.enum(["KUNDE", "LIEFERANT", "PARTNER"]).parse(form.get("typ")),
+    typ: z.enum(["KUNDE", "LIEFERANT", "PARTNER", "MITARBEITER"]).parse(form.get("typ")),
     kategorie: z.enum(["PRIVAT", "GEWERBE", "OEFFENTLICH"]).parse(form.get("kategorie")),
   });
   revalidatePath("/kontakte");

@@ -11,6 +11,7 @@ const NAV = [
   { href: "/zeiten", text: "Zeiten" },
   { href: "/projekte", text: "Projekte" },
   { href: "/angebote", text: "Angebote" },
+  { href: "/rechnungen", text: "Rechnungen", buero: true },
   { href: "/kontakte", text: "Kontakte" },
   { href: "/leistungen", text: "Leistungen", buero: true },
   { href: "/lager", text: "Lager" },
@@ -18,6 +19,7 @@ const NAV = [
   { href: "/plankosten", text: "Plankosten", nurAdmin: true },
   { href: "/einstellungen/benutzer", text: "Benutzer", nurAdmin: true },
   { href: "/einstellungen/postfaecher", text: "Postfächer", nurAdmin: true },
+  { href: "/einstellungen/nummernkreise", text: "Nummernkreise", nurAdmin: true },
   { href: "/einstellungen/api", text: "API", buero: true },
 ];
 

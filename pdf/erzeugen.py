@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Erzeugt Angebote und Auftragsbestätigungen im CD der jeweiligen Firma.
+Erzeugt Angebote, Auftragsbestätigungen, Rechnungen und Mengennachweise im CD der jeweiligen Firma.
 
     python3 erzeugen.py ziel.pdf < beleg.json
 
@@ -32,7 +32,7 @@ def absaetze(s):
 # --------------------------------------------------------------------- GBSD
 def gbsd(d, ziel):
     sys.path.insert(0, os.path.join(HIER, "gbsd"))
-    from gbsd_dokument import GBSDDokument, SPALTEN_PREISE
+    from gbsd_dokument import GBSDDokument, SPALTEN_PREISE, SPALTEN_MENGEN
 
     infos = [(f"{d['dokumentart']} Nr.:", d["belegnummer"], True), ("Datum:", d["datum"])]
     if d.get("kundennummer"):
@@ -41,6 +41,8 @@ def gbsd(d, ziel):
         infos.append(("Gültig bis:", d["gueltigBis"]))
     if d.get("ansprechpartner"):
         infos.append(("Ansprechpartner:", d["ansprechpartner"]))
+    for label, wert in d.get("infosZusatz") or []:
+        infos.append((f"{label}:", wert))
 
     doc = GBSDDokument(ziel, empfaenger=d["empfaenger"], infos=infos)
     doc.betreff(d["betreff"])
@@ -66,7 +68,25 @@ def gbsd(d, ziel):
                 "menge": menge_txt(p["menge"]), "einheit": p["einheit"],
                 "preis": eur(p["einzelpreis"]), "gesamt": "" if p.get("bedarf") else eur(p["gesamt"]),
             })
+    if d.get("mengennachweis"):
+        doc.tabelle(SPALTEN_MENGEN, _mengen_zeilen(d))
+        doc.speichern()
+        return
     doc.tabelle(SPALTEN_PREISE, zeilen)
+    re_ = d.get("rechnung")
+    if re_:
+        doc.summen([(z["label"], f"{eur(z['betrag'])} €") for z in re_["abrechnung"]])
+        if re_.get("vorrechnungen"):
+            doc.abschnitt(re_.get("vorrechnungenTitel") or "Verrechnete Rechnungen", re_["vorrechnungen"])
+        for h in re_.get("hinweise") or []:
+            doc.hinweis(h["titel"], h["text"])
+        if re_.get("zahlung"):
+            doc.absatz(re_["zahlung"])
+        for a in absaetze(d.get("schlusstext")):
+            doc.absatz(a)
+        doc.gruss(name=d.get("unterzeichner") or None)
+        doc.speichern()
+        return
     s = d["summen"]
     doc.summen([
         ("Summe netto", f"{eur(s['netto'])} €"),
@@ -81,6 +101,58 @@ def gbsd(d, ziel):
         doc.absatz(a)
     doc.gruss(name=d.get("unterzeichner") or None)
     doc.speichern()
+
+
+def _mengen_zeilen(d):
+    """Mengennachweis (REB): je Position die Aufmaßzeilen als Beschreibung."""
+    zeilen = []
+    for p in d["positionen"]:
+        if p["art"] == "GRUPPE":
+            zeilen.append({"pos": p["posNr"], "text": p["kurztext"], "beschreibung": ""})
+        elif p["art"] == "POSITION":
+            zeilen.append({"pos": p["posNr"], "text": p["kurztext"], "beschreibung": "\n".join(p.get("aufmass") or []),
+                           "menge": menge_txt(p["menge"]), "einheit": p["einheit"]})
+    return zeilen
+
+
+def _rechnung_rd_kud(doc, mod, d, luecke=17.0):
+    """Abzüge, Einbehalt und Zahlbetrag unter der Zusammenstellung; danach Hinweise und Zahlungstext."""
+    re_ = d["rechnung"]
+    c = doc.c
+    weitere = re_["abrechnung"][3:]  # Netto, Steuer und Summe zeigt die Zusammenstellung
+    if weitere:
+        doc.y -= luecke
+        for i, z in enumerate(weitere):
+            doc._platz(mod.ZEILE)
+            fett = i == len(weitere) - 1
+            mod.text(c, mod.POS_X, doc.y, z["label"], 10.0, fett=fett)
+            mod.text(c, mod.ZUSAMMEN_R, doc.y, mod.zahl(z["betrag"]), 10.0, fett=fett, align="right")
+            doc.y -= 14.46
+    doc._in_tabelle = False
+    doc.y -= mod.ABSATZ
+    if re_.get("vorrechnungen"):
+        doc.absatz(re_.get("vorrechnungenTitel") or "Verrechnete Rechnungen", fett=True, abstand=mod.ZEILE)
+        for v in re_["vorrechnungen"]:
+            doc.absatz(v, abstand=mod.ZEILE)
+        doc.y -= mod.ABSATZ - mod.ZEILE
+    for h in re_.get("hinweise") or []:
+        doc.absatz(h["titel"], fett=True, abstand=mod.ZEILE)
+        doc.absatz(h["text"])
+    if re_.get("zahlung"):
+        doc.absatz(re_["zahlung"])
+    for a in absaetze(d.get("schlusstext")):
+        doc.absatz(a)
+
+
+def _mengen_rd_kud(doc, mod, d):
+    for p in d["positionen"]:
+        if p["art"] == "GRUPPE":
+            doc.absatz(f"{p['posNr']}  {p['kurztext']}", fett=True, abstand=mod.ZEILE)
+        elif p["art"] == "POSITION":
+            doc.absatz(f"{p['posNr']}  {p['kurztext']}: {menge_txt(p['menge'])} {p['einheit']}", fett=True, abstand=mod.ZEILE)
+            for z in p.get("aufmass") or []:
+                doc.absatz(z, x=mod.TEXT_X, abstand=mod.ZEILE)
+            doc.y -= 6
 
 
 # ------------------------------------------------- Riedrich und Dremel (GvE)
@@ -129,9 +201,21 @@ def rd(d, ziel):
         doc.absatz(a, max_breite=430.0)
     if d.get("vorbemerkung"):
         doc.vorbemerkung(absaetze(d["vorbemerkung"]))
+    import gve_dokument as mod
+    for zeile in d.get("vortext") or []:
+        doc.absatz(zeile, max_breite=430.0)
+    if d.get("mengennachweis"):
+        _mengen_rd_kud(doc, mod, d)
+        doc.speichern()
+        return
     doc.tabelle()
     _tabellarisch(doc, d)
     doc.zusammenstellung()
+    if d.get("rechnung"):
+        _rechnung_rd_kud(doc, mod, d)
+        doc.schluss(satz=None, unterzeichner=d.get("unterzeichner") or None)
+        doc.speichern()
+        return
     doc.schluss(unterzeichner=d.get("unterzeichner") or None)
     if d["dokumentart"] == "Angebot":
         doc.auftragsformular()
@@ -141,7 +225,19 @@ def rd(d, ziel):
 
 
 # ----------------------------------------------------------- Kusche und Dremel
+def _ohne_eurozeichen(x):
+    """Die KuD-Hausschrift hat kein €-Zeichen: überall „EUR“ schreiben."""
+    if isinstance(x, str):
+        return x.replace(" €", " EUR").replace("€", "EUR")
+    if isinstance(x, list):
+        return [_ohne_eurozeichen(v) for v in x]
+    if isinstance(x, dict):
+        return {k: _ohne_eurozeichen(v) for k, v in x.items()}
+    return x
+
+
 def kud(d, ziel):
+    d = _ohne_eurozeichen(d)
     sys.path.insert(0, os.path.join(HIER, "kud"))
     from reportlab.lib.utils import simpleSplit
     from kud_dokument import KuDDokument, TEXT_X, EP_R
@@ -160,6 +256,13 @@ def kud(d, ziel):
         doc.absatz(a)
     if d.get("vorbemerkung"):
         doc.vorbemerkung(absaetze(d["vorbemerkung"]))
+    import kud_dokument as mod
+    for zeile in d.get("vortext") or []:
+        doc.absatz(zeile)
+    if d.get("mengennachweis"):
+        _mengen_rd_kud(doc, mod, d)
+        doc.speichern()
+        return
     doc.tabelle()
     # Titel bricht der KuD-Generator nicht um: lange Kurztexte in die Beschreibung verschieben.
     for p in d["positionen"]:
@@ -169,6 +272,11 @@ def kud(d, ziel):
             p["langtext"] = " ".join(zeilen[1:]) + ("\n" + p["langtext"] if p.get("langtext") else "")
     _tabellarisch(doc, d, umbrechen)
     doc.zusammenstellung()
+    if d.get("rechnung"):
+        _rechnung_rd_kud(doc, mod, d, luecke=-26.0)  # KuD lässt nach der Endsumme schon Platz
+        doc.schluss(satz=None, unterzeichner=d.get("unterzeichner") or "")
+        doc.speichern()
+        return
     doc.schluss(unterzeichner=d.get("unterzeichner") or "")
     if d["dokumentart"] == "Angebot":
         doc.auftragsformular()

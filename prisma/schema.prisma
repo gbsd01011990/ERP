@@ -20,6 +20,7 @@ enum KontaktTyp {
   KUNDE
   LIEFERANT
   PARTNER
+  MITARBEITER
 }
 
 enum KontaktKategorie {
@@ -45,76 +46,83 @@ enum LogbuchArt {
 }
 
 model Firma {
-  id             String   @id @default(cuid())
-  kuerzel        String   @unique // GBSD, RD, KUD
-  name           String
-  zusatz         String?
-  strasse        String?
-  plz            String?
-  ort            String?
-  telefon        String?
-  email          String?
-  web            String?
-  farbe          String   @default("#2f5d3a")
-  projektPraefix String
+  id                 String   @id @default(cuid())
+  kuerzel            String   @unique // GBSD, RD, KUD
+  name               String
+  zusatz             String?
+  strasse            String?
+  plz                String?
+  ort                String?
+  telefon            String?
+  email              String?
+  web                String?
+  farbe              String   @default("#2f5d3a")
+  projektPraefix     String
   // Kalkulationssätze (Angebotsmodul)
-  stundensatz        Decimal @default(58) @db.Decimal(8, 2)  // €/h Lohn inkl. Gemeinkosten
-  materialAufschlag  Decimal @default(20) @db.Decimal(5, 2)  // % auf Material-EK
-  fremdAufschlag     Decimal @default(15) @db.Decimal(5, 2)  // % auf Fremdleistung
-  mwstSatz           Decimal @default(19) @db.Decimal(4, 2)
-  angebotGueltigTage Int     @default(14)
+  stundensatz        Decimal  @default(58) @db.Decimal(8, 2) // €/h Lohn inkl. Gemeinkosten
+  materialAufschlag  Decimal  @default(20) @db.Decimal(5, 2) // % auf Material-EK
+  fremdAufschlag     Decimal  @default(15) @db.Decimal(5, 2) // % auf Fremdleistung
+  mwstSatz           Decimal  @default(19) @db.Decimal(4, 2)
+  angebotGueltigTage Int      @default(14)
+  // Rechnungen
+  zahlungszielTage   Int      @default(14)
+  skontoProzent      Decimal  @default(0) @db.Decimal(4, 2)
+  skontoTage         Int      @default(0)
   // Microsoft 365 (App-Berechtigung); leer = Werte aus MS_TENANT_ID/MS_CLIENT_ID/MS_CLIENT_SECRET
   msTenantId         String?
   msClientId         String?
-  msClientSecret     String?  // verschlüsselt
-  createdAt      DateTime @default(now())
+  msClientSecret     String? // verschlüsselt
+  createdAt          DateTime @default(now())
 
-  zugriffe     Zugriff[]
-  projekte     Projekt[]
-  projektTypen ProjektTyp[]
-  status       PipelineStatus[]
+  zugriffe      Zugriff[]
+  projekte      Projekt[]
+  projektTypen  ProjektTyp[]
+  status        PipelineStatus[]
   nummernkreise Nummernkreis[]
-  kontaktIds   KontaktFremdId[]
-  leistungen   Leistung[]
-  angebote     Angebot[]
-  lager        Lager[]
-  artikel      Artikel[]
-  geraete      Geraet[]
-  kostenplaene Kostenplan[]
-  sitzungen    Sitzung[]
+  kontaktIds    KontaktFremdId[]
+  leistungen    Leistung[]
+  angebote      Angebot[]
+  lager         Lager[]
+  artikel       Artikel[]
+  geraete       Geraet[]
+  kostenplaene  Kostenplan[]
+  sitzungen     Sitzung[]
   apiSchluessel ApiSchluessel[]
-  zeiten       Zeiteintrag[]
-  logbuch      LogbuchEintrag[]
-  postfaecher  Postfach[]
-  emails       Email[]
-  aufgaben     Aufgabe[]
+  zeiten        Zeiteintrag[]
+  logbuch       LogbuchEintrag[]
+  postfaecher   Postfach[]
+  emails        Email[]
+  aufgaben      Aufgabe[]
+  rechnungen    Rechnung[]
 }
 
 model Benutzer {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String
   passwortHash String
-  rolle        Rolle     @default(BUERO)
-  aktiv        Boolean   @default(true)
-  createdAt    DateTime  @default(now())
+  rolle        Rolle    @default(BUERO)
+  aktiv        Boolean  @default(true)
+  createdAt    DateTime @default(now())
 
-  zugriffe     Zugriff[]
-  sitzungen    Sitzung[]
-  logbuch      LogbuchEintrag[]
-  projekte     Projekt[] @relation("Verantwortlich")
-  angebote     Angebot[]
-  apiSchluessel ApiSchluessel[]
-  lagerBuchungen LagerBuchung[]
-  geraetEreignisse GeraetEreignis[]
-  geraetEinsaetze GeraetEinsatz[]
-  postfaecher     Postfach[]
-  postfachZugriffe PostfachZugriff[]
-  aufgabenZustaendig Aufgabe[] @relation("AufgabeZustaendig")
-  aufgabenErstellt   Aufgabe[] @relation("AufgabeErsteller")
-  zeiten          Zeiteintrag[] @relation("ZeitMitarbeiter")
-  zeitenErfasst   Zeiteintrag[] @relation("ZeitErfasser")
-  zeitenFreigabe  Zeiteintrag[] @relation("ZeitFreigabe")
+  zugriffe                  Zugriff[]
+  sitzungen                 Sitzung[]
+  logbuch                   LogbuchEintrag[]
+  projekte                  Projekt[]         @relation("Verantwortlich")
+  angebote                  Angebot[]
+  apiSchluessel             ApiSchluessel[]
+  lagerBuchungen            LagerBuchung[]
+  geraetEreignisse          GeraetEreignis[]
+  geraetEinsaetze           GeraetEinsatz[]
+  postfaecher               Postfach[]
+  postfachZugriffe          PostfachZugriff[]
+  aufgabenZustaendig        Aufgabe[]         @relation("AufgabeZustaendig")
+  aufgabenErstellt          Aufgabe[]         @relation("AufgabeErsteller")
+  zeiten                    Zeiteintrag[]     @relation("ZeitMitarbeiter")
+  zeitenErfasst             Zeiteintrag[]     @relation("ZeitErfasser")
+  zeitenFreigabe            Zeiteintrag[]     @relation("ZeitFreigabe")
+  rechnungenErstellt        Rechnung[]        @relation("RechnungErsteller")
+  rechnungenFestgeschrieben Rechnung[]        @relation("RechnungFestschreiber")
 }
 
 model Zugriff {
@@ -129,7 +137,7 @@ model Zugriff {
 model Sitzung {
   id         String   @id // zufälliges Token (gehasht gespeichert)
   benutzerId String
-  firmaId    String?  // Mandant, bei dem angemeldet wurde; ohne Mandant ist die Sitzung ungültig
+  firmaId    String? // Mandant, bei dem angemeldet wurde; ohne Mandant ist die Sitzung ungültig
   ablauf     DateTime
   benutzer   Benutzer @relation(fields: [benutzerId], references: [id], onDelete: Cascade)
   firma      Firma?   @relation(fields: [firmaId], references: [id], onDelete: Cascade)
@@ -137,31 +145,31 @@ model Sitzung {
 
 /// Kundenkartei ist firmenübergreifend; Fremd-IDs je Firma in KontaktFremdId.
 model Kontakt {
-  id           String           @id @default(cuid())
-  nummer       String?          @unique
-  typ          KontaktTyp       @default(KUNDE)
-  kategorie    KontaktKategorie @default(PRIVAT)
-  firmenname   String?
-  anrede       String?
-  vorname      String?
-  nachname     String?
-  email        String?
-  telefon      String?
-  mobil        String?
-  web          String?
-  leitwegId    String?
-  notiz        String?
-  geloescht    Boolean          @default(false)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id         String           @id @default(cuid())
+  nummer     String?          @unique
+  typ        KontaktTyp       @default(KUNDE)
+  kategorie  KontaktKategorie @default(PRIVAT)
+  firmenname String?
+  anrede     String?
+  vorname    String?
+  nachname   String?
+  email      String?
+  telefon    String?
+  mobil      String?
+  web        String?
+  leitwegId  String?
+  notiz      String?
+  geloescht  Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
-  adressen         Adresse[]
-  ansprechpartner  Ansprechpartner[]
-  projekte         Projekt[]
-  fremdIds         KontaktFremdId[]
-  logbuch          LogbuchEintrag[]
-  emails           Email[]
-  aufgaben         Aufgabe[]
+  adressen        Adresse[]
+  ansprechpartner Ansprechpartner[]
+  projekte        Projekt[]
+  fremdIds        KontaktFremdId[]
+  logbuch         LogbuchEintrag[]
+  emails          Email[]
+  aufgaben        Aufgabe[]
 
   @@index([nachname])
   @@index([firmenname])
@@ -171,7 +179,7 @@ model KontaktFremdId {
   id        String  @id @default(cuid())
   kontaktId String
   firmaId   String
-  system    String  // "HERO" | "LEXWARE"
+  system    String // "HERO" | "LEXWARE"
   fremdId   String
   kontakt   Kontakt @relation(fields: [kontaktId], references: [id], onDelete: Cascade)
   firma     Firma   @relation(fields: [firmaId], references: [id], onDelete: Cascade)
@@ -216,27 +224,29 @@ model ProjektTyp {
 }
 
 model PipelineStatus {
-  id           String    @id @default(cuid())
-  firmaId      String
-  name         String
-  reihenfolge  Int
-  farbe        String    @default("#64748b")
-  abgeschlossen Boolean  @default(false)
-  verloren     Boolean   @default(false)
-  firma        Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
-  projekte     Projekt[]
+  id            String    @id @default(cuid())
+  firmaId       String
+  name          String
+  reihenfolge   Int
+  farbe         String    @default("#64748b")
+  abgeschlossen Boolean   @default(false)
+  verloren      Boolean   @default(false)
+  firma         Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  projekte      Projekt[]
 
   @@unique([firmaId, name])
 }
 
 model Nummernkreis {
-  id       String @id @default(cuid())
-  firmaId  String
-  art      String // PROJEKT, ANGEBOT, AUFTRAG, AUFMASS ...
-  praefix  String
-  naechste Int    @default(1)
-  stellen  Int    @default(3)
-  firma    Firma  @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  id          String  @id @default(cuid())
+  firmaId     String
+  art         String // PROJEKT, ANGEBOT, AUFTRAG, AUFMASS ...
+  praefix     String
+  naechste    Int     @default(1)
+  stellen     Int     @default(3)
+  jahresweise Boolean @default(false) // true: zum Jahreswechsel wieder bei 1 beginnen
+  jahr        Int? // Jahr der zuletzt vergebenen Nummer (für jahresweise)
+  firma       Firma   @relation(fields: [firmaId], references: [id], onDelete: Cascade)
 
   @@unique([firmaId, art])
 }
@@ -251,7 +261,7 @@ model Projekt {
   statusId         String
   kontaktId        String
   verantwortlichId String?
-  quelle           String?  // Empfehlung, Website, Ausschreibung ...
+  quelle           String? // Empfehlung, Website, Ausschreibung ...
   volumen          Decimal? @db.Decimal(12, 2)
   baustelleStrasse String?
   baustellePlz     String?
@@ -262,18 +272,19 @@ model Projekt {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  firma          Firma            @relation(fields: [firmaId], references: [id])
-  typ            ProjektTyp?      @relation(fields: [typId], references: [id])
-  status         PipelineStatus   @relation(fields: [statusId], references: [id])
-  kontakt        Kontakt          @relation(fields: [kontaktId], references: [id])
-  verantwortlich Benutzer?        @relation("Verantwortlich", fields: [verantwortlichId], references: [id])
-  logbuch        LogbuchEintrag[]
-  angebote       Angebot[]
-  lagerBuchungen LagerBuchung[]
+  firma           Firma            @relation(fields: [firmaId], references: [id])
+  typ             ProjektTyp?      @relation(fields: [typId], references: [id])
+  status          PipelineStatus   @relation(fields: [statusId], references: [id])
+  kontakt         Kontakt          @relation(fields: [kontaktId], references: [id])
+  verantwortlich  Benutzer?        @relation("Verantwortlich", fields: [verantwortlichId], references: [id])
+  logbuch         LogbuchEintrag[]
+  angebote        Angebot[]
+  rechnungen      Rechnung[]
+  lagerBuchungen  LagerBuchung[]
   geraetEinsaetze GeraetEinsatz[]
-  zeiten         Zeiteintrag[]
-  emails         Email[]
-  aufgaben       Aufgabe[]
+  zeiten          Zeiteintrag[]
+  emails          Email[]
+  aufgaben        Aufgabe[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -285,7 +296,7 @@ model LogbuchEintrag {
   id         String     @id @default(cuid())
   projektId  String?
   kontaktId  String?
-  firmaId    String?    // Pflicht für Kontakt-Einträge: die Kartei ist gemeinsam, Notizen gehören dem Mandanten
+  firmaId    String? // Pflicht für Kontakt-Einträge: die Kartei ist gemeinsam, Notizen gehören dem Mandanten
   benutzerId String?
   art        LogbuchArt @default(NOTIZ)
   text       String
@@ -322,57 +333,57 @@ enum PositionsArt {
 
 /// Leistungsstamm je Firma. Einzelpreis ergibt sich aus der Kalkulation oder ist fest gesetzt.
 model Leistung {
-  id            String   @id @default(cuid())
-  firmaId       String
-  nummer        String
-  kategorie     String?
-  kurztext      String
-  langtext      String?
-  einheit       String   @default("Stk.")
-  minuten       Decimal  @default(0) @db.Decimal(10, 2) // Lohnminuten je Einheit
-  materialEk    Decimal  @default(0) @db.Decimal(12, 2)
-  geraete       Decimal  @default(0) @db.Decimal(12, 2) // Maschinen/Geräte je Einheit (Verrechnungspreis)
-  fremdEk       Decimal  @default(0) @db.Decimal(12, 2)
-  festpreis     Decimal? @db.Decimal(12, 2)
-  aktiv         Boolean  @default(true)
-  lexwareId     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  firma         Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
-  positionen    AngebotsPosition[]
+  id         String             @id @default(cuid())
+  firmaId    String
+  nummer     String
+  kategorie  String?
+  kurztext   String
+  langtext   String?
+  einheit    String             @default("Stk.")
+  minuten    Decimal            @default(0) @db.Decimal(10, 2) // Lohnminuten je Einheit
+  materialEk Decimal            @default(0) @db.Decimal(12, 2)
+  geraete    Decimal            @default(0) @db.Decimal(12, 2) // Maschinen/Geräte je Einheit (Verrechnungspreis)
+  fremdEk    Decimal            @default(0) @db.Decimal(12, 2)
+  festpreis  Decimal?           @db.Decimal(12, 2)
+  aktiv      Boolean            @default(true)
+  lexwareId  String?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  firma      Firma              @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  positionen AngebotsPosition[]
 
   @@unique([firmaId, nummer])
 }
 
 model Angebot {
-  id           String      @id @default(cuid())
-  firmaId      String
-  projektId    String
-  art          BelegArt    @default(ANGEBOT)
-  nummer       String
-  version      Int         @default(1)
-  status       BelegStatus @default(ENTWURF)
-  datum        DateTime    @default(now())
-  gueltigBis   DateTime?
-  betreff      String
-  anrede       String?
-  einleitung   String?
-  vorbemerkung String?
-  schlusstext  String?
-  mwstSatz     Decimal     @db.Decimal(4, 2)
-  stundensatz  Decimal     @db.Decimal(8, 2)  // Sätze zum Zeitpunkt der Erstellung einfrieren
-  materialAufschlag Decimal @db.Decimal(5, 2)
-  fremdAufschlag    Decimal @db.Decimal(5, 2)
-  netto        Decimal     @default(0) @db.Decimal(12, 2)
-  vorgaengerId String?
-  erstelltVonId String?
+  id                String      @id @default(cuid())
+  firmaId           String
+  projektId         String
+  art               BelegArt    @default(ANGEBOT)
+  nummer            String
+  version           Int         @default(1)
+  status            BelegStatus @default(ENTWURF)
+  datum             DateTime    @default(now())
+  gueltigBis        DateTime?
+  betreff           String
+  anrede            String?
+  einleitung        String?
+  vorbemerkung      String?
+  schlusstext       String?
+  mwstSatz          Decimal     @db.Decimal(4, 2)
+  stundensatz       Decimal     @db.Decimal(8, 2) // Sätze zum Zeitpunkt der Erstellung einfrieren
+  materialAufschlag Decimal     @db.Decimal(5, 2)
+  fremdAufschlag    Decimal     @db.Decimal(5, 2)
+  netto             Decimal     @default(0) @db.Decimal(12, 2)
+  vorgaengerId      String?
+  erstelltVonId     String?
   // GAEB: Originaldatei des Auftraggebers, damit X84/X86 exakt auf dessen LV antworten
-  gaebQuelle   Bytes?
-  gaebName     String?
-  gaebPhase    String?
-  gaebInfo     Json?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  gaebQuelle        Bytes?
+  gaebName          String?
+  gaebPhase         String?
+  gaebInfo          Json?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   firma       Firma              @relation(fields: [firmaId], references: [id])
   projekt     Projekt            @relation(fields: [projektId], references: [id], onDelete: Cascade)
@@ -380,35 +391,37 @@ model Angebot {
   vorgaenger  Angebot?           @relation("Folge", fields: [vorgaengerId], references: [id])
   nachfolger  Angebot[]          @relation("Folge")
   positionen  AngebotsPosition[]
+  rechnungen  Rechnung[]
 
   @@unique([firmaId, nummer, version])
   @@index([projektId])
 }
 
 model AngebotsPosition {
-  id          String       @id @default(cuid())
-  angebotId   String
-  reihenfolge Int
-  art         PositionsArt @default(POSITION)
-  kurztext    String
-  langtext    String?
-  menge       Decimal      @default(1) @db.Decimal(12, 3)
-  einheit     String       @default("Stk.")
-  minuten     Decimal      @default(0) @db.Decimal(10, 2)
-  materialEk  Decimal      @default(0) @db.Decimal(12, 2)
-  geraete     Decimal      @default(0) @db.Decimal(12, 2)
-  fremdEk     Decimal      @default(0) @db.Decimal(12, 2)
-  einzelpreis Decimal      @default(0) @db.Decimal(12, 2)
-  preisFest   Boolean      @default(false) // true: Einzelpreis von Hand gesetzt, nicht aus Kalkulation
-  bedarf      Boolean      @default(false) // Bedarfs-/Alternativposition: nicht in der Summe
-  ebene       Int          @default(1)     // Titelebene (GAEB: Los/Titel/Untertitel)
-  oz          String?                      // Ordnungszahl aus GAEB; sonst wird nummeriert
-  gaebId      String?                      // Item-/Kategorie-ID im GAEB-LV des Auftraggebers
-  gaebTyp     String?                      // Normal, LumpSum, Eventual, Alternative, Markup …
-  leistungId  String?
-  angebot     Angebot      @relation(fields: [angebotId], references: [id], onDelete: Cascade)
-  leistung    Leistung?    @relation(fields: [leistungId], references: [id])
-  aufmass     AufmassZeile[]
+  id                  String              @id @default(cuid())
+  angebotId           String
+  reihenfolge         Int
+  art                 PositionsArt        @default(POSITION)
+  kurztext            String
+  langtext            String?
+  menge               Decimal             @default(1) @db.Decimal(12, 3)
+  einheit             String              @default("Stk.")
+  minuten             Decimal             @default(0) @db.Decimal(10, 2)
+  materialEk          Decimal             @default(0) @db.Decimal(12, 2)
+  geraete             Decimal             @default(0) @db.Decimal(12, 2)
+  fremdEk             Decimal             @default(0) @db.Decimal(12, 2)
+  einzelpreis         Decimal             @default(0) @db.Decimal(12, 2)
+  preisFest           Boolean             @default(false) // true: Einzelpreis von Hand gesetzt, nicht aus Kalkulation
+  bedarf              Boolean             @default(false) // Bedarfs-/Alternativposition: nicht in der Summe
+  ebene               Int                 @default(1) // Titelebene (GAEB: Los/Titel/Untertitel)
+  oz                  String? // Ordnungszahl aus GAEB; sonst wird nummeriert
+  gaebId              String? // Item-/Kategorie-ID im GAEB-LV des Auftraggebers
+  gaebTyp             String? // Normal, LumpSum, Eventual, Alternative, Markup …
+  leistungId          String?
+  angebot             Angebot             @relation(fields: [angebotId], references: [id], onDelete: Cascade)
+  leistung            Leistung?           @relation(fields: [leistungId], references: [id])
+  aufmass             AufmassZeile[]
+  rechnungsPositionen RechnungsPosition[]
 
   @@index([angebotId, reihenfolge])
 }
@@ -424,7 +437,7 @@ model AufmassZeile {
   breite      Decimal?         @db.Decimal(12, 3)
   hoehe       Decimal?         @db.Decimal(12, 3)
   abzug       Boolean          @default(false)
-  reb         String?          // Zeilen nach REB 23.003 (z. B. aus GAEB X31)
+  reb         String? // Zeilen nach REB 23.003 (z. B. aus GAEB X31)
   createdAt   DateTime         @default(now())
   position    AngebotsPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
 
@@ -438,8 +451,8 @@ model ApiSchluessel {
   benutzerId    String
   name          String
   hash          String    @unique
-  firmaId       String?   // Mandant, für den der Schlüssel gilt; Schlüssel ohne Mandant werden abgewiesen
-  anfang        String    // erste Zeichen zur Wiedererkennung, z. B. "erp_a1b2c3"
+  firmaId       String? // Mandant, für den der Schlüssel gilt; Schlüssel ohne Mandant werden abgewiesen
+  anfang        String // erste Zeichen zur Wiedererkennung, z. B. "erp_a1b2c3"
   nurLesen      Boolean   @default(false)
   letzteNutzung DateTime?
   widerrufenAm  DateTime?
@@ -458,22 +471,22 @@ enum LagerArt {
 }
 
 enum BuchungsArt {
-  ZUGANG      // Wareneingang mit EK-Preis
-  ABGANG      // Verbrauch, Schwund, Entsorgung
-  UMBUCHUNG   // von Lager zu Lager
-  PROJEKT     // Entnahme auf ein Projekt (Ist-Kosten)
-  INVENTUR    // Korrektur auf gezählten Bestand
+  ZUGANG // Wareneingang mit EK-Preis
+  ABGANG // Verbrauch, Schwund, Entsorgung
+  UMBUCHUNG // von Lager zu Lager
+  PROJEKT // Entnahme auf ein Projekt (Ist-Kosten)
+  INVENTUR // Korrektur auf gezählten Bestand
 }
 
 model Lager {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   firmaId   String
   name      String
-  art       LagerArt @default(HAUPTLAGER)
+  art       LagerArt       @default(HAUPTLAGER)
   adresse   String?
-  aktiv     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  firma     Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  aktiv     Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  firma     Firma          @relation(fields: [firmaId], references: [id], onDelete: Cascade)
   bestaende Bestand[]
   abgaenge  LagerBuchung[] @relation("VonLager")
   zugaenge  LagerBuchung[] @relation("NachLager")
@@ -483,20 +496,20 @@ model Lager {
 }
 
 model Artikel {
-  id             String   @id @default(cuid())
+  id             String         @id @default(cuid())
   firmaId        String
   nummer         String
   bezeichnung    String
   kategorie      String?
-  einheit        String   @default("Stk.")
-  durchschnittEk Decimal  @default(0) @db.Decimal(12, 4) // gleitender Durchschnitt, Basis der Bestandsbewertung
-  letzterEk      Decimal? @db.Decimal(12, 4)
-  mindestbestand Decimal? @db.Decimal(12, 3)            // Summe über alle Lager
+  einheit        String         @default("Stk.")
+  durchschnittEk Decimal        @default(0) @db.Decimal(12, 4) // gleitender Durchschnitt, Basis der Bestandsbewertung
+  letzterEk      Decimal?       @db.Decimal(12, 4)
+  mindestbestand Decimal?       @db.Decimal(12, 3) // Summe über alle Lager
   lieferant      String?
-  aktiv          Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  firma          Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  aktiv          Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  firma          Firma          @relation(fields: [firmaId], references: [id], onDelete: Cascade)
   bestaende      Bestand[]
   buchungen      LagerBuchung[]
 
@@ -524,7 +537,7 @@ model LagerBuchung {
   ekPreis     Decimal?    @db.Decimal(12, 4) // Zugang: Einkaufspreis; sonst Bewertungspreis zum Buchungszeitpunkt
   wert        Decimal     @default(0) @db.Decimal(12, 2)
   projektId   String?
-  beleg       String?     // Lieferschein-Nr. o. Ä.
+  beleg       String? // Lieferschein-Nr. o. Ä.
   notiz       String?
   benutzerId  String?
   createdAt   DateTime    @default(now())
@@ -575,35 +588,35 @@ enum EreignisArt {
 }
 
 model Geraet {
-  id                 String          @id @default(cuid())
+  id                 String           @id @default(cuid())
   firmaId            String
   inventarNr         String
   bezeichnung        String
-  kategorie          GeraetKategorie @default(MASCHINE)
-  status             GeraetStatus    @default(VERFUEGBAR)
+  kategorie          GeraetKategorie  @default(MASCHINE)
+  status             GeraetStatus     @default(VERFUEGBAR)
   hersteller         String?
   modell             String?
   seriennummer       String?
   kennzeichen        String?
   baujahr            Int?
-  lagerId            String?         // Standort
-  betriebsstunden    Decimal?        @db.Decimal(10, 1)
+  lagerId            String? // Standort
+  betriebsstunden    Decimal?         @db.Decimal(10, 1)
   kmStand            Int?
   notiz              String?
   // Maschinenkalkulation (je Jahr)
   anschaffungAm      DateTime?
-  anschaffungspreis  Decimal?        @db.Decimal(12, 2)
+  anschaffungspreis  Decimal?         @db.Decimal(12, 2)
   nutzungsdauerJahre Int?
   einsatzstundenJahr Int?
-  zinsProzent        Decimal         @default(5) @db.Decimal(5, 2)   // kalk. Zins auf das halbe Anschaffungskapital
-  reparaturProzent   Decimal         @default(8) @db.Decimal(5, 2)   // Reparatur/Wartung in % vom Anschaffungspreis je Jahr
-  fixkostenJahr      Decimal         @default(0) @db.Decimal(12, 2)  // Versicherung, Steuer, Garage
-  betriebskostenStd  Decimal         @default(0) @db.Decimal(10, 2)  // Kraftstoff, Schmierstoffe je Stunde
-  verrechnungssatz   Decimal?        @db.Decimal(10, 2)              // fester Satz statt Kalkulation
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  firma              Firma           @relation(fields: [firmaId], references: [id], onDelete: Cascade)
-  lager              Lager?          @relation(fields: [lagerId], references: [id])
+  zinsProzent        Decimal          @default(5) @db.Decimal(5, 2) // kalk. Zins auf das halbe Anschaffungskapital
+  reparaturProzent   Decimal          @default(8) @db.Decimal(5, 2) // Reparatur/Wartung in % vom Anschaffungspreis je Jahr
+  fixkostenJahr      Decimal          @default(0) @db.Decimal(12, 2) // Versicherung, Steuer, Garage
+  betriebskostenStd  Decimal          @default(0) @db.Decimal(10, 2) // Kraftstoff, Schmierstoffe je Stunde
+  verrechnungssatz   Decimal?         @db.Decimal(10, 2) // fester Satz statt Kalkulation
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  firma              Firma            @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  lager              Lager?           @relation(fields: [lagerId], references: [id])
   pruefungen         GeraetPruefung[]
   ereignisse         GeraetEreignis[]
   einsaetze          GeraetEinsatz[]
@@ -661,31 +674,31 @@ model GeraetEinsatz {
 // ---------------------------------------------------------------- Plankostenrechnung
 
 enum Verteilung {
-  LOHN      // Gemeinkosten werden auf die produktiven Stunden umgelegt
-  MATERIAL  // Zuschlag auf Material-EK
-  FREMD     // Zuschlag auf Fremdleistung
+  LOHN // Gemeinkosten werden auf die produktiven Stunden umgelegt
+  MATERIAL // Zuschlag auf Material-EK
+  FREMD // Zuschlag auf Fremdleistung
 }
 
 model Kostenplan {
-  id                   String   @id @default(cuid())
-  firmaId              String
-  jahr                 Int
-  bezeichnung          String?
+  id                     String            @id @default(cuid())
+  firmaId                String
+  jahr                   Int
+  bezeichnung            String?
   // Personal
-  mitarbeiter          Decimal  @default(0) @db.Decimal(6, 2)   // gewerbliche Mitarbeiter (Vollzeit-Äquivalent)
-  bezahlteStundenJahr  Decimal  @default(1720) @db.Decimal(7, 1) // je Mitarbeiter
-  produktivProzent     Decimal  @default(85) @db.Decimal(5, 2)   // Anteil auf Baustellen abrechenbar
-  mittellohn           Decimal  @default(0) @db.Decimal(8, 2)    // €/h brutto
-  lohnnebenkostenProzent Decimal @default(85) @db.Decimal(5, 2)  // Sozialkosten, Urlaub, Feiertage, Krankheit
+  mitarbeiter            Decimal           @default(0) @db.Decimal(6, 2) // gewerbliche Mitarbeiter (Vollzeit-Äquivalent)
+  bezahlteStundenJahr    Decimal           @default(1720) @db.Decimal(7, 1) // je Mitarbeiter
+  produktivProzent       Decimal           @default(85) @db.Decimal(5, 2) // Anteil auf Baustellen abrechenbar
+  mittellohn             Decimal           @default(0) @db.Decimal(8, 2) // €/h brutto
+  lohnnebenkostenProzent Decimal           @default(85) @db.Decimal(5, 2) // Sozialkosten, Urlaub, Feiertage, Krankheit
   // Einsatz
-  materialEinsatzJahr  Decimal  @default(0) @db.Decimal(12, 2)
-  fremdEinsatzJahr     Decimal  @default(0) @db.Decimal(12, 2)
-  wagnisGewinnProzent  Decimal  @default(8) @db.Decimal(5, 2)
-  uebernommenAm        DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  firma                Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
-  zeilen               KostenplanZeile[]
+  materialEinsatzJahr    Decimal           @default(0) @db.Decimal(12, 2)
+  fremdEinsatzJahr       Decimal           @default(0) @db.Decimal(12, 2)
+  wagnisGewinnProzent    Decimal           @default(8) @db.Decimal(5, 2)
+  uebernommenAm          DateTime?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  firma                  Firma             @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  zeilen                 KostenplanZeile[]
 
   @@unique([firmaId, jahr])
 }
@@ -694,7 +707,7 @@ model KostenplanZeile {
   id          String     @id @default(cuid())
   planId      String
   reihenfolge Int
-  gruppe      String     // z. B. Personal Verwaltung, Fahrzeuge, Gebäude, Versicherungen
+  gruppe      String // z. B. Personal Verwaltung, Fahrzeuge, Gebäude, Versicherungen
   bezeichnung String
   betragJahr  Decimal    @db.Decimal(12, 2)
   verteilung  Verteilung @default(LOHN)
@@ -706,37 +719,37 @@ model KostenplanZeile {
 // ---------------------------------------------------------------- Zeiterfassung
 
 enum ZeitKategorie {
-  UMSETZUNG       // Arbeit auf der Baustelle
+  UMSETZUNG // Arbeit auf der Baustelle
   FAHRZEIT
   VOR_ORT_TERMIN
   PROJEKTIERUNG
   BUEROARBEIT
   AUFGABE
-  PAUSE           // zählt nicht als Arbeitszeit
+  PAUSE // zählt nicht als Arbeitszeit
   SONSTIGE
 }
 
 /// Ein Zeitblock eines Mitarbeiters. ende = null: Stempeluhr läuft.
 /// Nach der Freigabe durch das Büro gesperrt.
 model Zeiteintrag {
-  id             String        @id @default(cuid())
-  firmaId        String
-  benutzerId     String        // Mitarbeiter
-  projektId      String?
-  kategorie      ZeitKategorie @default(UMSETZUNG)
-  beginn         DateTime
-  ende           DateTime?
-  notiz          String?
-  erfasstVonId   String?       // wer gebucht hat (Büro kann für Mitarbeiter nachtragen)
-  freigegebenAm  DateTime?
+  id               String        @id @default(cuid())
+  firmaId          String
+  benutzerId       String // Mitarbeiter
+  projektId        String?
+  kategorie        ZeitKategorie @default(UMSETZUNG)
+  beginn           DateTime
+  ende             DateTime?
+  notiz            String?
+  erfasstVonId     String? // wer gebucht hat (Büro kann für Mitarbeiter nachtragen)
+  freigegebenAm    DateTime?
   freigegebenVonId String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  firma          Firma         @relation(fields: [firmaId], references: [id], onDelete: Cascade)
-  benutzer       Benutzer      @relation("ZeitMitarbeiter", fields: [benutzerId], references: [id], onDelete: Cascade)
-  projekt        Projekt?      @relation(fields: [projektId], references: [id])
-  erfasstVon     Benutzer?     @relation("ZeitErfasser", fields: [erfasstVonId], references: [id])
-  freigegebenVon Benutzer?     @relation("ZeitFreigabe", fields: [freigegebenVonId], references: [id])
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  firma            Firma         @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  benutzer         Benutzer      @relation("ZeitMitarbeiter", fields: [benutzerId], references: [id], onDelete: Cascade)
+  projekt          Projekt?      @relation(fields: [projektId], references: [id])
+  erfasstVon       Benutzer?     @relation("ZeitErfasser", fields: [erfasstVonId], references: [id])
+  freigegebenVon   Benutzer?     @relation("ZeitFreigabe", fields: [freigegebenVonId], references: [id])
 
   @@index([firmaId, benutzerId, beginn])
   @@index([projektId])
@@ -746,26 +759,26 @@ model Zeiteintrag {
 
 enum PostfachArt {
   PERSOENLICH // Postfach eines Mitarbeiters, nur er sieht nicht zugeordnete Mails
-  GETEILT     // z. B. info@ oder rechnung@, sichtbar für freigegebene Mitarbeiter
+  GETEILT // z. B. info@ oder rechnung@, sichtbar für freigegebene Mitarbeiter
 }
 
 /// Microsoft-365-Postfach im Mandanten. Abruf über die App-Berechtigung der Firma (kein Login je Mitarbeiter).
 model Postfach {
-  id               String      @id @default(cuid())
+  id               String            @id @default(cuid())
   firmaId          String
-  art              PostfachArt @default(PERSOENLICH)
+  art              PostfachArt       @default(PERSOENLICH)
   adresse          String
-  name             String?     // Anzeigename, z. B. "Info" oder "Rechnungen"
-  benutzerId       String?     // Inhaber bei persönlichen Postfächern
+  name             String? // Anzeigename, z. B. "Info" oder "Rechnungen"
+  benutzerId       String? // Inhaber bei persönlichen Postfächern
   deltaPosteingang String?
   deltaGesendet    String?
-  abrufAb          DateTime    // erster Abruf ab diesem Datum
+  abrufAb          DateTime // erster Abruf ab diesem Datum
   letzterAbruf     DateTime?
   fehler           String?
-  aktiv            Boolean     @default(true)
-  createdAt        DateTime    @default(now())
-  firma            Firma       @relation(fields: [firmaId], references: [id], onDelete: Cascade)
-  benutzer         Benutzer?   @relation(fields: [benutzerId], references: [id], onDelete: SetNull)
+  aktiv            Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  firma            Firma             @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  benutzer         Benutzer?         @relation(fields: [benutzerId], references: [id], onDelete: SetNull)
   zugriffe         PostfachZugriff[]
   emails           Email[]
 
@@ -788,34 +801,34 @@ enum EmailRichtung {
 }
 
 model Email {
-  id            String        @id @default(cuid())
-  firmaId       String
-  postfachId    String
-  graphId       String        // ID bei Microsoft
-  internetId    String?       // Message-ID-Header, erkennt dieselbe Mail in mehreren Postfächern
-  konversation  String?
-  richtung      EmailRichtung
-  betreff       String
-  vonName       String?
-  vonAdresse    String
-  an            String[]      // Adressen
-  cc            String[]
-  vorschau      String?
-  text          String?       // Klartext (HTML wird nicht gespeichert)
-  hatAnhaenge   Boolean       @default(false)
-  webLink       String?       // Öffnen in Outlook im Web
-  empfangenAm   DateTime
-  gelesen       Boolean       @default(false)
-  kontaktId     String?
-  projektId     String?
-  zuordnung     String?       // AUTO | HAND
-  ignoriert     Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  firma         Firma         @relation(fields: [firmaId], references: [id], onDelete: Cascade)
-  postfach      Postfach      @relation(fields: [postfachId], references: [id], onDelete: Cascade)
-  kontakt       Kontakt?      @relation(fields: [kontaktId], references: [id], onDelete: SetNull)
-  projekt       Projekt?      @relation(fields: [projektId], references: [id], onDelete: SetNull)
-  aufgaben      Aufgabe[]
+  id           String        @id @default(cuid())
+  firmaId      String
+  postfachId   String
+  graphId      String // ID bei Microsoft
+  internetId   String? // Message-ID-Header, erkennt dieselbe Mail in mehreren Postfächern
+  konversation String?
+  richtung     EmailRichtung
+  betreff      String
+  vonName      String?
+  vonAdresse   String
+  an           String[] // Adressen
+  cc           String[]
+  vorschau     String?
+  text         String? // Klartext (HTML wird nicht gespeichert)
+  hatAnhaenge  Boolean       @default(false)
+  webLink      String? // Öffnen in Outlook im Web
+  empfangenAm  DateTime
+  gelesen      Boolean       @default(false)
+  kontaktId    String?
+  projektId    String?
+  zuordnung    String? // AUTO | HAND
+  ignoriert    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  firma        Firma         @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  postfach     Postfach      @relation(fields: [postfachId], references: [id], onDelete: Cascade)
+  kontakt      Kontakt?      @relation(fields: [kontaktId], references: [id], onDelete: SetNull)
+  projekt      Projekt?      @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  aufgaben     Aufgabe[]
 
   @@unique([postfachId, graphId])
   @@index([firmaId, empfangenAm])
@@ -848,4 +861,158 @@ model Aufgabe {
 
   @@index([firmaId, erledigtAm, faelligAm])
   @@index([zustaendigId, erledigtAm])
+}
+
+// ---------------------------------------------------------------- Rechnungen
+// GoBD: Ein Entwurf ist frei änderbar und hat keine Nummer. Beim Festschreiben
+// vergibt der Nummernkreis RECHNUNG die nächste Nummer, Summen und Anschrift
+// werden eingefroren und das PDF gespeichert. Danach ändert nur noch ein Storno
+// oder eine Rechnungskorrektur etwas.
+
+enum RechnungsArt {
+  RECHNUNG
+  ABSCHLAG
+  TEILSCHLUSS
+  SCHLUSS
+  KORREKTUR
+  STORNO
+}
+
+enum RechnungsStatus {
+  ENTWURF
+  FESTGESCHRIEBEN
+  STORNIERT
+}
+
+enum AbschlagsModus {
+  AUFMASS // kumuliert nach Leistungsstand, frühere Abschläge werden abgezogen
+  PLAN // Prozentsatz der Auftragssumme laut Zahlungsplan
+}
+
+/// Kostenart einer Rechnungsposition für den Ausweis nach § 35a EStG.
+enum Kostenart {
+  LOHN
+  MASCHINE
+  FAHRT
+  MATERIAL
+  GEMISCHT // begünstigter Anteil je Einheit steht in lohnEp
+}
+
+model Rechnung {
+  id                   String          @id @default(cuid())
+  firmaId              String
+  projektId            String
+  angebotId            String? // Auftragsgrundlage (Angebot oder Auftragsbestätigung)
+  bezugId              String? // Storno/Korrektur: die berichtigte Rechnung
+  art                  RechnungsArt    @default(RECHNUNG)
+  status               RechnungsStatus @default(ENTWURF)
+  nummer               String? // erst beim Festschreiben vergeben
+  abschlagNr           Int? // 1., 2., … Abschlag zum Auftrag
+  abschlagModus        AbschlagsModus?
+  planProzent          Decimal?        @db.Decimal(6, 2)
+  datum                DateTime        @default(now())
+  leistungVon          DateTime?
+  leistungBis          DateTime?
+  betreff              String
+  anrede               String?
+  einleitung           String?
+  schlusstext          String?
+  kundenReferenz       String? // Bestellnummer bzw. Leitweg-ID des Auftraggebers
+  mwstSatz             Decimal         @db.Decimal(4, 2)
+  steuerschuldUmkehr   Boolean         @default(false) // § 13b UStG
+  s35a                 Boolean         @default(false)
+  zahlungszielTage     Int             @default(14)
+  skontoProzent        Decimal         @default(0) @db.Decimal(4, 2)
+  skontoTage           Int             @default(0)
+  einbehaltProzent     Decimal         @default(0) @db.Decimal(4, 2) // Sicherheitseinbehalt (VOB/B § 17)
+  aufmassAnhang        Boolean         @default(true) // Mengennachweis mit ausgeben
+  // eingefroren beim Festschreiben
+  netto                Decimal         @default(0) @db.Decimal(12, 2) // Rechnungsbetrag netto (nach Abzügen)
+  mwst                 Decimal         @default(0) @db.Decimal(12, 2)
+  brutto               Decimal         @default(0) @db.Decimal(12, 2)
+  einbehalt            Decimal         @default(0) @db.Decimal(12, 2)
+  zahlbetrag           Decimal         @default(0) @db.Decimal(12, 2)
+  lohnBrutto           Decimal         @default(0) @db.Decimal(12, 2) // § 35a, Anteil dieser Rechnung
+  berechnung           Json?
+  empfaenger           Json?
+  pdf                  Bytes?
+  festgeschriebenAm    DateTime?
+  festgeschriebenVonId String?
+  erstelltVonId        String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  firma              Firma               @relation(fields: [firmaId], references: [id])
+  projekt            Projekt             @relation(fields: [projektId], references: [id])
+  angebot            Angebot?            @relation(fields: [angebotId], references: [id])
+  bezug              Rechnung?           @relation("Bezug", fields: [bezugId], references: [id])
+  folge              Rechnung[]          @relation("Bezug")
+  erstelltVon        Benutzer?           @relation("RechnungErsteller", fields: [erstelltVonId], references: [id])
+  festgeschriebenVon Benutzer?           @relation("RechnungFestschreiber", fields: [festgeschriebenVonId], references: [id])
+  positionen         RechnungsPosition[]
+  verrechnungen      Verrechnung[]       @relation("Verrechnet")
+  verrechnetIn       Verrechnung[]       @relation("Vorrechnung")
+
+  @@unique([firmaId, nummer])
+  @@index([projektId])
+  @@index([angebotId])
+}
+
+model RechnungsPosition {
+  id                 String             @id @default(cuid())
+  rechnungId         String
+  reihenfolge        Int
+  art                PositionsArt       @default(POSITION)
+  ebene              Int                @default(1)
+  oz                 String?
+  kurztext           String
+  langtext           String?
+  menge              Decimal            @default(0) @db.Decimal(12, 3) // bei Aufmaß: Summe der Aufmaßzeilen (kumuliert)
+  einheit            String             @default("Stk.")
+  einzelpreis        Decimal            @default(0) @db.Decimal(12, 2)
+  kostenart          Kostenart          @default(MATERIAL)
+  lohnEp             Decimal            @default(0) @db.Decimal(12, 2)
+  auftragsMenge      Decimal?           @db.Decimal(12, 3) // Menge laut Auftrag, zum Vergleich
+  angebotsPositionId String?
+  rechnung           Rechnung           @relation(fields: [rechnungId], references: [id], onDelete: Cascade)
+  angebotsPosition   AngebotsPosition?  @relation(fields: [angebotsPositionId], references: [id], onDelete: SetNull)
+  aufmass            RechnungsAufmass[]
+
+  @@index([rechnungId, reihenfolge])
+}
+
+/// Mengennachweis (REB 23.003): Faktoren oder Formel, je Zeile mit Datum der Feststellung.
+model RechnungsAufmass {
+  id          String            @id @default(cuid())
+  positionId  String
+  reihenfolge Int
+  datum       DateTime?
+  text        String?
+  formel      String? // z. B. "12,5*3,2 - 2*(0,8*0,8)"; hat Vorrang vor den Faktoren
+  anzahl      Decimal?          @db.Decimal(12, 3)
+  laenge      Decimal?          @db.Decimal(12, 3)
+  breite      Decimal?          @db.Decimal(12, 3)
+  hoehe       Decimal?          @db.Decimal(12, 3)
+  abzug       Boolean           @default(false)
+  reb         String?
+  position    RechnungsPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@index([positionId, reihenfolge])
+}
+
+/// Frühere Rechnung, die in dieser Rechnung abgezogen wird (Abschläge, Teilschlussrechnungen).
+/// Beträge sind die eingefrorenen Werte der Vorrechnung.
+model Verrechnung {
+  id         String   @id @default(cuid())
+  rechnungId String
+  vorId      String
+  netto      Decimal  @db.Decimal(12, 2)
+  mwst       Decimal  @db.Decimal(12, 2)
+  brutto     Decimal  @db.Decimal(12, 2)
+  einbehalt  Decimal  @default(0) @db.Decimal(12, 2)
+  lohnBrutto Decimal  @default(0) @db.Decimal(12, 2)
+  rechnung   Rechnung @relation("Verrechnet", fields: [rechnungId], references: [id], onDelete: Cascade)
+  vor        Rechnung @relation("Vorrechnung", fields: [vorId], references: [id])
+
+  @@unique([rechnungId, vorId])
 }

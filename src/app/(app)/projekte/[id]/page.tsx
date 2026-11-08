@@ -10,6 +10,8 @@ import { AufgabenListe, aufgabeInclude } from "@/components/aufgaben-liste";
 import { AufgabeFormular } from "@/components/aufgabe-formular";
 import { AktionsFormular } from "@/components/aktions-formular";
 import { lvImportAktion } from "../../angebote/gaeb-actions";
+import { RechnungNeu } from "@/components/rechnung-neu";
+import { ART_TITEL, STATUS_TEXT } from "@/lib/faktura/texte";
 
 const ART_TEXT = { NOTIZ: "Notiz", ANRUF: "Anruf", EMAIL: "E-Mail", TERMIN: "Termin", STATUS: "Status", SYSTEM: "System" } as const;
 
@@ -26,6 +28,7 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
       kontakt: { include: { adressen: true } },
       logbuch: { orderBy: { createdAt: "desc" }, include: { benutzer: { select: { name: true } } } },
       angebote: { orderBy: [{ createdAt: "asc" }] },
+      rechnungen: { orderBy: [{ createdAt: "asc" }], omit: { pdf: true } },
     },
   });
   if (!p || !firmenIds(b).includes(p.firmaId)) notFound();
@@ -116,6 +119,30 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
           )}
         </section>
       </div>
+
+      {buero && (
+        <section className="karte space-y-2 text-sm">
+          <h2 className="font-semibold">Rechnungen</h2>
+          <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+            <div>
+              {p.rechnungen.map((r) => (
+                <Link key={r.id} href={`/rechnungen/${r.id}`} className="flex flex-wrap gap-2 rounded px-1 py-1 hover:bg-slate-50">
+                  <span className="font-medium text-marke">{r.art === "ABSCHLAG" && r.abschlagNr ? `${r.abschlagNr}. Abschlag` : ART_TITEL[r.art]} {r.nummer ?? ""}</span>
+                  <span className="text-slate-500">{STATUS_TEXT[r.status]}{r.nummer ? ` · ${datum(r.datum)}` : ""}</span>
+                  <span className="ml-auto">{r.status === "ENTWURF" ? "" : euro(r.brutto)}</span>
+                </Link>
+              ))}
+              {p.rechnungen.length === 0 && <p className="text-slate-500">Noch keine Rechnungen.</p>}
+            </div>
+            <RechnungNeu
+              projektId={p.id}
+              angebote={p.angebote.filter((a) => a.status !== "ERSETZT" && a.status !== "ABGELEHNT").map((a) => ({
+                id: a.id, text: `${a.art === "ANGEBOT" ? "Angebot" : "AB"} ${a.nummer}${a.version > 1 ? `-${a.version}` : ""} · ${euro(a.netto)} netto`,
+              }))}
+            />
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="karte space-y-3">

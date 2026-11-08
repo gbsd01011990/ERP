@@ -46,6 +46,15 @@ async function main() {
         create: { firmaId: firma.id, art, praefix, naechste: 1, stellen: art === "PROJEKT" ? 3 : 4 },
       });
     }
+    // Rechnungen: GBSD führt seinen bisherigen Kreis fort (2026-114). Anpassbar unter Einstellungen → Nummernkreise.
+    const re = f.kuerzel === "GBSD"
+      ? { praefix: "2026-", naechste: 114, stellen: 3, jahresweise: false }
+      : { praefix: `${f.projektPraefix}-RE-{JJJJ}-`, naechste: 1, stellen: 3, jahresweise: true };
+    await db.nummernkreis.upsert({
+      where: { firmaId_art: { firmaId: firma.id, art: "RECHNUNG" } },
+      update: {},
+      create: { firmaId: firma.id, art: "RECHNUNG", ...re },
+    });
   }
 
   const email = process.env.ADMIN_EMAIL ?? "admin@example.de";

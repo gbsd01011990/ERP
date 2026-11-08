@@ -53,7 +53,7 @@ GAEB (DA XML 2.0–3.3 über pyGAEB, MIT-Lizenz; `gaeb/gaeb_dienst.py`):
   Preis je Einheit (Preisbasis beachtet) als letzter EK.
 - Kalkulation aus dem Leistungsstamm auf GAEB-Positionen übernehmen, Texte und OZ bleiben.
 - Schemaprüfung jeder Exportdatei, sobald die offiziellen XSD unter `GAEB_XSD_DIR` liegen.
-- Noch nicht: X89 Rechnung und X31-Export (kommen mit dem Rechnungswesen), GAEB-2000-Textformat (P8x),
+- Noch nicht: X89 Rechnung und X31-Export, GAEB-2000-Textformat (P8x),
   Hinweistexte im Export eigener LVs, Bieterangaben (Fabrikat/Typ) in X84.
 
 E-Mail und CRM:
@@ -81,6 +81,24 @@ Zeiterfassung:
 - Alle Zeiten in deutscher Ortszeit (Europe/Berlin), unabhängig von der Server-Zeitzone.
 - Benutzerverwaltung für Admins: Mitarbeiter anlegen, Rolle, Mandanten, Passwort zurücksetzen, sperren.
 
+Rechnungen (je Mandant eigener Nummernkreis, eigenes Design):
+
+- Rechnung, Abschlagsrechnung nach Leistungsstand (kumuliert, frühere Abschläge werden einzeln mit
+  ihrer Steuer abgezogen) oder nach Zahlungsplan (Prozent der Auftragssumme, je Kostenart getrennt),
+  Teilschluss-, Schluss-, Korrektur- und Stornorechnung. Anlegen im Projekt, Grundlage ist das Angebot bzw. die AB.
+- Mengennachweis nach REB je Position: Datum, Bezeichnung, Faktoren oder Formel (`12,5*3,2-0,8^2`,
+  Klammern, PI, WURZEL), Abzüge; Mengen aus GAEB X31 übernehmen; Mengennachweis als eigenes PDF.
+- Sicherheitseinbehalt (VOB/B § 17): bei Abschlägen auf den Rechnungsbetrag, in der Schlussrechnung auf
+  die Gesamtleistung; einbehaltene Beträge aus Abschlägen werden dort wieder fällig. Skonto, Zahlungsziel.
+- § 35a EStG: Kostenart je Position (Lohn, Maschine, Fahrt, Material, gemischt), Ausweis der
+  begünstigten Kosten; § 13b UStG ohne Steuer mit Pflichthinweis; Hinweis bei Anzahlung vor Leistung.
+- GoBD: Entwürfe haben keine Nummer. Festschreiben prüft die Pflichtangaben, vergibt die nächste Nummer,
+  friert Beträge und Anschrift ein und speichert das PDF. Danach nur noch Storno oder Korrektur;
+  eine schon verrechnete Abschlagsrechnung lässt sich erst nach der späteren Rechnung stornieren.
+- Nummernkreise frei einstellbar (Einstellungen → Nummernkreise): Präfix mit `{JJJJ}`/`{JJ}`, nächste
+  Nummer, Stellen, jährlich neu. GBSD startet bei 2026-114. Belegte Nummern werden abgelehnt.
+- Noch nicht: ZUGFeRD/XRechnung, GAEB X89, Zahlungseingänge und offene Posten, DATEV-Export.
+
 Mandanten:
 
 - Eigene Anmeldeseite je Firma mit Logo und Farben: `/login/gbsd`, `/login/riedrich-dremel`,
@@ -92,7 +110,7 @@ Schnittstelle:
 - GraphQL-API unter `/api/graphql` mit API-Schlüsseln je Benutzer (lesen oder lesen und schreiben),
   GraphiQL-Editor im Browser. Details in [docs/API.md](docs/API.md).
 
-Geplant: Lexware-Anbindung, Plantafel, Handy-App für Kolonnen, HRworks, DATEV,
+Geplant: E-Rechnung, offene Posten und DATEV-Export, Telefonagent und Messenger, Plantafel, Handy-App für Kolonnen, HRworks, DATEV,
 Zusatzwerkzeuge (Radar, GAEB, Baumkataster, Pflegeverträge, Fuhrpark).
 
 ## PDF-Erzeugung
