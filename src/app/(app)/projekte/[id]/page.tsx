@@ -8,6 +8,8 @@ import { angebotAnlegen } from "../../angebote/actions";
 import { nachkalkulation } from "@/lib/nachkalkulation";
 import { AufgabenListe, aufgabeInclude } from "@/components/aufgaben-liste";
 import { AufgabeFormular } from "@/components/aufgabe-formular";
+import { AktionsFormular } from "@/components/aktions-formular";
+import { lvImportAktion } from "../../angebote/gaeb-actions";
 
 const ART_TEXT = { NOTIZ: "Notiz", ANRUF: "Anruf", EMAIL: "E-Mail", TERMIN: "Termin", STATUS: "Status", SYSTEM: "System" } as const;
 
@@ -102,7 +104,16 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
             </Link>
           ))}
           {p.angebote.length === 0 && <p className="text-slate-500">Noch keine Angebote.</p>}
-          <p className="pt-2 text-xs text-slate-400">Rechnungen über Lexware folgen im nächsten Schritt.</p>
+          {buero && (
+            <details className="pt-2">
+              <summary className="cursor-pointer text-marke">GAEB-Datei importieren</summary>
+              <p className="mt-1 text-xs text-slate-500">Ausschreibung (X80–X83, D83, P83), Auftrag (X86) oder Angebot (X84/X85). Daraus entsteht ein Angebot bzw. eine Auftragsbestätigung mit allen Positionen.</p>
+              <AktionsFormular aktion={lvImportAktion} knopf="Importieren" knopfKlasse="btn-hell py-1" encType="multipart/form-data" className="mt-2 grid gap-2">
+                <input type="hidden" name="projektId" value={p.id} />
+                <input type="file" name="datei" required accept=".x80,.x81,.x82,.x83,.x84,.x85,.x86,.x52,.d81,.d83,.d84,.d86,.p81,.p83,.p84,.p86,.xml" className="text-sm" />
+              </AktionsFormular>
+            </details>
+          )}
         </section>
       </div>
 

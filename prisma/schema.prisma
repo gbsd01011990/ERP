@@ -366,6 +366,11 @@ model Angebot {
   netto        Decimal     @default(0) @db.Decimal(12, 2)
   vorgaengerId String?
   erstelltVonId String?
+  // GAEB: Originaldatei des Auftraggebers, damit X84/X86 exakt auf dessen LV antworten
+  gaebQuelle   Bytes?
+  gaebName     String?
+  gaebPhase    String?
+  gaebInfo     Json?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -396,6 +401,10 @@ model AngebotsPosition {
   einzelpreis Decimal      @default(0) @db.Decimal(12, 2)
   preisFest   Boolean      @default(false) // true: Einzelpreis von Hand gesetzt, nicht aus Kalkulation
   bedarf      Boolean      @default(false) // Bedarfs-/Alternativposition: nicht in der Summe
+  ebene       Int          @default(1)     // Titelebene (GAEB: Los/Titel/Untertitel)
+  oz          String?                      // Ordnungszahl aus GAEB; sonst wird nummeriert
+  gaebId      String?                      // Item-/Kategorie-ID im GAEB-LV des Auftraggebers
+  gaebTyp     String?                      // Normal, LumpSum, Eventual, Alternative, Markup …
   leistungId  String?
   angebot     Angebot      @relation(fields: [angebotId], references: [id], onDelete: Cascade)
   leistung    Leistung?    @relation(fields: [leistungId], references: [id])
@@ -415,6 +424,7 @@ model AufmassZeile {
   breite      Decimal?         @db.Decimal(12, 3)
   hoehe       Decimal?         @db.Decimal(12, 3)
   abzug       Boolean          @default(false)
+  reb         String?          // Zeilen nach REB 23.003 (z. B. aus GAEB X31)
   createdAt   DateTime         @default(now())
   position    AngebotsPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
 

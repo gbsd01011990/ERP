@@ -34,7 +34,11 @@ services:
       MS_TENANT_ID: ${MS_TENANT_ID:-}
       MS_CLIENT_ID: ${MS_CLIENT_ID:-}
       MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
+      GAEB_XSD_DIR: /app/gaeb/xsd
       TZ: Europe/Berlin
+    volumes:
+      # Offizielle GAEB-Schemas (von gaeb.de) hier ablegen, dann wird jeder Export geprüft
+      - ${GAEB_XSD_VERZEICHNIS:-/opt/erp/gaeb-xsd}:/app/gaeb/xsd:ro
     ports:
       # Nur auf dem Server selbst erreichbar; nach außen geht es über Caddy oder euren Webserver
       - "127.0.0.1:${APP_PORT:-3000}:3000"

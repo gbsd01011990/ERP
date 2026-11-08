@@ -26,6 +26,7 @@ export function einzelpreisAnteile(k: KalkWerte, s: Saetze) {
 
 export type Pos = KalkWerte & {
   art: "GRUPPE" | "POSITION" | "TEXT";
+  ebene?: number;
   menge: Zahl;
   einzelpreis: Zahl;
   preisFest: boolean;
@@ -35,14 +36,14 @@ export type Pos = KalkWerte & {
 /** Wirksamer Einzelpreis: fester Preis oder kalkuliert. */
 export const wirksamerEp = (p: Pos, s: Saetze) => (p.preisFest ? n(p.einzelpreis) : einzelpreisAnteile(p, s).summe);
 
-/** Positionsnummern 01, 01.01, 01.02 … ; Positionen vor der ersten Gruppe zählen als 00.xx. */
-export function nummerieren<T extends { art: string }>(positionen: T[]) {
+/** Positionsnummern 01, 01.01, 01.02 … ; Positionen vor der ersten Gruppe zählen als 00.xx. Eine GAEB-OZ hat Vorrang. */
+export function nummerieren<T extends { art: string; oz?: string | null }>(positionen: T[]) {
   let g = 0, u = 0;
   return positionen.map((p) => {
-    if (p.art === "GRUPPE") { g++; u = 0; return { ...p, posNr: String(g).padStart(2, "0") }; }
+    if (p.art === "GRUPPE") { g++; u = 0; return { ...p, posNr: p.oz || String(g).padStart(2, "0") }; }
     if (p.art === "TEXT") return { ...p, posNr: "" };
     u++;
-    return { ...p, posNr: `${String(g).padStart(2, "0")}.${String(u).padStart(2, "0")}` };
+    return { ...p, posNr: p.oz || `${String(g).padStart(2, "0")}.${String(u).padStart(2, "0")}` };
   });
 }
 
@@ -50,13 +51,22 @@ export function nummerieren<T extends { art: string }>(positionen: T[]) {
 export function summen(positionen: Pos[], s: Saetze & { mwstSatz: Zahl }) {
   let netto = 0, lohn = 0, minuten = 0, materialEk = 0, fremdEk = 0, geraete = 0;
   const gruppen: { index: number; summe: number }[] = [];
+  // Offene Titel als Stapel: eine Position zählt in ihren Titel und alle übergeordneten
+  const offen: { gruppe: { index: number; summe: number }; ebene: number }[] = [];
   positionen.forEach((p, i) => {
-    if (p.art === "GRUPPE") { gruppen.push({ index: i, summe: 0 }); return; }
+    if (p.art === "GRUPPE") {
+      const ebene = p.ebene ?? 1;
+      while (offen.length && offen[offen.length - 1].ebene >= ebene) offen.pop();
+      const gruppe = { index: i, summe: 0 };
+      gruppen.push(gruppe);
+      offen.push({ gruppe, ebene });
+      return;
+    }
     if (p.art !== "POSITION" || p.bedarf) return;
     const menge = n(p.menge);
     const gesamt = runden(wirksamerEp(p, s) * menge);
     netto += gesamt;
-    if (gruppen.length) gruppen[gruppen.length - 1].summe += gesamt;
+    for (const o of offen) o.gruppe.summe += gesamt;
     const a = einzelpreisAnteile(p, s);
     // Bei festem Preis zählt der kalkulierte Lohn nur, solange er den Preis nicht übersteigt.
     lohn += Math.min(a.lohn, p.preisFest ? n(p.einzelpreis) : a.lohn) * menge;

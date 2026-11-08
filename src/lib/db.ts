@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
-const g = globalThis as unknown as { prisma?: PrismaClient };
-export const db = g.prisma ?? new PrismaClient();
+// Große Binärfelder nicht standardmäßig laden (GAEB-Originaldatei); wo nötig mit omit: { gaebQuelle: false }
+const neu = () => new PrismaClient({ omit: { angebot: { gaebQuelle: true } } });
+const g = globalThis as unknown as { prisma?: ReturnType<typeof neu> };
+export const db = g.prisma ?? neu();
 if (process.env.NODE_ENV !== "production") g.prisma = db;

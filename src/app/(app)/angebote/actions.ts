@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { benutzerPflicht, firmenIds } from "@/lib/auth";
 import { naechsteNummer } from "@/lib/nummern";
@@ -95,6 +95,20 @@ export async function positionSpeichern(form: FormData) {
   await angebotPruefen(pos.angebotId);
   const ep = text(form.get("einzelpreis"));
   const menge = pos.aufmass.length ? aufmassSumme(pos.aufmass) : parseZahl(form.get("menge"), 0);
+  // Kalkulation aus dem Leistungsstamm übernehmen (z. B. für Positionen aus einer GAEB-Ausschreibung): Texte und OZ bleiben
+  const ausLeistung = text(form.get("kalkAusLeistung"));
+  if (ausLeistung) {
+    const angebot = await db.angebot.findUniqueOrThrow({ where: { id: pos.angebotId } });
+    const l = await db.leistung.findUnique({ where: { id: ausLeistung } });
+    if (!l || l.firmaId !== angebot.firmaId) throw new Error("Leistung nicht gefunden.");
+    await db.angebotsPosition.update({
+      where: { id: pos.id },
+      data: { leistungId: l.id, minuten: l.minuten, materialEk: l.materialEk, geraete: l.geraete, fremdEk: l.fremdEk, preisFest: l.festpreis != null, einzelpreis: l.festpreis ?? 0, menge },
+    });
+    await nettoAktualisieren(pos.angebotId);
+    neuLaden(pos.angebotId);
+    return;
+  }
   await db.angebotsPosition.update({
     where: { id: pos.id },
     data: {
@@ -170,11 +184,13 @@ export async function angebotAbgelehnt(form: FormData) {
 
 /** Kopie mit allen Positionen anlegen – für neue Version und Auftragsbestätigung. */
 async function kopieren(tx: Prisma.TransactionClient, quelleId: string, daten: Partial<Prisma.AngebotUncheckedCreateInput>) {
-  const q = await tx.angebot.findUniqueOrThrow({ where: { id: quelleId }, include: { positionen: { include: { aufmass: true } } } });
-  const { id: _i, createdAt: _c, updatedAt: _u, positionen, ...rest } = q;
+  // gaebQuelle ausdrücklich mitladen: Kopien (Version, AB) müssen weiter auf das LV des Auftraggebers antworten
+  const q = await tx.angebot.findUniqueOrThrow({ where: { id: quelleId }, omit: { gaebQuelle: false }, include: { positionen: { include: { aufmass: true } } } });
+  const { id: _i, createdAt: _c, updatedAt: _u, positionen, gaebInfo, ...rest } = q;
   return tx.angebot.create({
     data: {
       ...rest,
+      gaebInfo: gaebInfo ?? Prisma.JsonNull,
       status: "ENTWURF",
       datum: new Date(),
       vorgaengerId: q.id,

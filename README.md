@@ -40,6 +40,22 @@ Schritt 3 ist fertig:
 - Kolonnen dürfen Material entnehmen, umbuchen, Einsätze und Prüfungen erfassen; Zugang, Inventur,
   Stammdaten und Plankosten bleiben dem Büro bzw. Admin vorbehalten.
 
+GAEB (DA XML 2.0–3.3 über pyGAEB, MIT-Lizenz; `gaeb/gaeb_dienst.py`):
+
+- **Import** im Projekt: X80, X81, X82, X83 (Ausschreibung), X84/X85 (Angebote), X86 (Auftrag → Auftragsbestätigung),
+  auch DA XML 2.x (D8x) und GAEB 90 in Grundzügen. Titelhierarchie, Ordnungszahlen, Lang- und Kurztexte,
+  Mengen, Bedarfs-, Wahl- und Pauschalpositionen, Preise. Die Originaldatei bleibt am Angebot gespeichert.
+- **Export** am Angebot: X84 Angebotsabgabe und X85 Nebenangebot (antworten exakt auf das LV des Auftraggebers:
+  gleiche OZ und Kennungen, Einheitspreise, Preisanteile Lohn/Stoffe/Geräte/Sonstiges, Bieteranschrift),
+  X86, X80–X83 (z. B. Ausschreibung an Nachunternehmer ohne Preise). Ausgabe immer DA XML 3.3.
+- **Mengenermittlung X31** (REB 23.003) ins Aufmaß übernehmen, Zuordnung über die OZ.
+- **Preisangebot X94** (auch X93/X96/X97) vom Händler ins Lager: Zuordnung über Artikelnummer/EAN,
+  Preis je Einheit (Preisbasis beachtet) als letzter EK.
+- Kalkulation aus dem Leistungsstamm auf GAEB-Positionen übernehmen, Texte und OZ bleiben.
+- Schemaprüfung jeder Exportdatei, sobald die offiziellen XSD unter `GAEB_XSD_DIR` liegen.
+- Noch nicht: X89 Rechnung und X31-Export (kommen mit dem Rechnungswesen), GAEB-2000-Textformat (P8x),
+  Hinweistexte im Export eigener LVs, Bieterangaben (Fabrikat/Typ) in X84.
+
 E-Mail und CRM:
 
 - Microsoft 365 per App-Berechtigung je Mandant; Admin weist jedem Mitarbeiter sein Postfach zu und

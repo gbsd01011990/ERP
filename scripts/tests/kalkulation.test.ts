@@ -53,3 +53,14 @@ test("Aufmaß mit leeren Faktoren und Abzug", () => {
     { anzahl: 3, laenge: null, breite: null, hoehe: null, abzug: false },  // 3
   ]), 41.9);
 });
+
+test("Mehrstufige Titel und GAEB-OZ", () => {
+  const S2 = { stundensatz: 60, materialAufschlag: 0, fremdAufschlag: 0, mwstSatz: 19 };
+  const r = summen([
+    pos({ art: "GRUPPE", ebene: 1 }), pos({ art: "GRUPPE", ebene: 2 }), pos({ menge: 1, einzelpreis: 10, preisFest: true }),
+    pos({ art: "GRUPPE", ebene: 2 }), pos({ menge: 2, einzelpreis: 5, preisFest: true }),
+    pos({ art: "GRUPPE", ebene: 1 }), pos({ menge: 1, einzelpreis: 7, preisFest: true }),
+  ], S2);
+  assert.deepEqual(r.gruppen.map((g) => g.summe), [20, 10, 10, 7]);
+  assert.deepEqual(nummerieren([{ art: "GRUPPE", oz: "01" }, { art: "POSITION", oz: "01.0010" }, { art: "POSITION" }]).map((x) => x.posNr), ["01", "01.0010", "01.02"]);
+});

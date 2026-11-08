@@ -10,6 +10,9 @@ import {
   angebotVersendet, angebotAngenommen, angebotAbgelehnt, neueVersion, angebotLoeschen,
   aufmassHinzufuegen, aufmassLoeschen,
 } from "../actions";
+import { AktionsFormular } from "@/components/aktions-formular";
+import { mengenImportAktion } from "../gaeb-actions";
+import { EXPORT_PHASEN } from "@/lib/dienste/gaeb";
 
 const STATUS = {
   ENTWURF: ["Entwurf", "bg-slate-200 text-slate-700"],
@@ -80,6 +83,42 @@ export default async function AngebotSeite({ params }: { params: Promise<{ id: s
         ))}
       </section>
 
+      {/* GAEB */}
+      {b.rolle !== "KOLONNE" && (
+        <details className="karte text-sm" open={!!a.gaebPhase}>
+          <summary className="cursor-pointer font-semibold">GAEB {a.gaebPhase ? `· Quelle ${a.gaebPhase} „${a.gaebName}“` : ""}</summary>
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            <form action={`/angebote/${a.id}/gaeb`} method="get" className="space-y-2">
+              <label className="label" htmlFor="phase">Exportieren als</label>
+              <div className="flex gap-2">
+                <select id="phase" name="phase" defaultValue={a.art === "ANGEBOT" ? "X84" : "X86"} className="eingabe">
+                  {Object.entries(EXPORT_PHASEN).map(([k, v]) => <option key={k} value={k}>{k} – {v}</option>)}
+                </select>
+                <button className="btn">Herunterladen</button>
+              </div>
+              <p className="text-xs text-slate-500">
+                {a.gaebPhase
+                  ? "Die Datei antwortet auf das LV des Auftraggebers: gleiche Ordnungszahlen und Kennungen, Ihre Einheitspreise und Preisanteile (Lohn, Stoffe, Geräte, Sonstiges)."
+                  : "Aus diesem Angebot wird ein GAEB-LV im Format DA XML 3.3 erzeugt."}
+              </p>
+            </form>
+            <div className="space-y-2">
+              <span className="label">Mengenermittlung (X31) übernehmen</span>
+              {offen ? (
+                <AktionsFormular aktion={mengenImportAktion} knopf="Mengen importieren" knopfKlasse="btn-hell" encType="multipart/form-data" className="grid gap-2">
+                  <input type="hidden" name="angebotId" value={a.id} />
+                  <input type="file" name="datei" required accept=".x31,.d31,.xml" className="text-sm" />
+                </AktionsFormular>
+              ) : <p className="text-xs text-slate-500">Nur in Entwürfen möglich.</p>}
+              <p className="text-xs text-slate-500">
+                Mengen werden über die Ordnungszahl zugeordnet und als Aufmaßzeile mit den REB-Zeilen gespeichert.
+                {a.gaebPhase && " In der Angebotsabgabe (X84) gelten weiter die Mengen aus dem LV des Auftraggebers; aufgemessene Mengen fließen in die Abrechnung."}
+              </p>
+            </div>
+          </div>
+        </details>
+      )}
+
       {/* Kopfdaten */}
       <details className="karte" open={offen && a.positionen.length === 0}>
         <summary className="cursor-pointer font-semibold">Kopfdaten und Texte</summary>
@@ -116,7 +155,7 @@ export default async function AngebotSeite({ params }: { params: Promise<{ id: s
             <details key={p.id} className={`border-b border-slate-100 ${p.art === "GRUPPE" ? "bg-marke-hell" : ""}`}>
               <summary className="grid cursor-pointer list-none grid-cols-[4rem_1fr] gap-2 px-4 py-2 text-sm md:grid-cols-[4rem_1fr_6rem_5rem_7rem_7rem_6rem]">
                 <span className="text-slate-500">{p.posNr}</span>
-                <span className={p.art === "GRUPPE" ? "font-semibold" : p.art === "TEXT" ? "italic text-slate-600" : ""}>
+                <span style={{ paddingLeft: `${Math.max(0, (p.ebene ?? 1) - 1) * 0.75}rem` }} className={p.art === "GRUPPE" ? "font-semibold" : p.art === "TEXT" ? "italic text-slate-600" : ""}>
                   {p.kurztext}
                   {p.bedarf && <span className="ml-2 rounded bg-slate-200 px-1 text-xs">Bedarf</span>}
                   {p.preisFest && <span className="ml-2 rounded bg-amber-100 px-1 text-xs">Festpreis</span>}
@@ -158,6 +197,15 @@ export default async function AngebotSeite({ params }: { params: Promise<{ id: s
                           <input name="einzelpreis" defaultValue={p.preisFest ? zahl(p.einzelpreis) : ""} placeholder={zahl(anteile.summe)} className="eingabe" />
                         </div>
                         <label className="flex items-end gap-2 pb-2 text-sm md:col-span-2"><input type="checkbox" name="bedarf" defaultChecked={p.bedarf} /> Bedarfsposition (nicht in Summe)</label>
+                        {leistungen.length > 0 && (
+                          <div className="md:col-span-2">
+                            <label className="label">Kalkulation aus Leistung übernehmen</label>
+                            <select name="kalkAusLeistung" defaultValue="" className="eingabe">
+                              <option value="">– nicht übernehmen –</option>
+                              {leistungen.map((l) => <option key={l.id} value={l.id}>{l.nummer} {l.kurztext}</option>)}
+                            </select>
+                          </div>
+                        )}
                         <div className="text-xs text-slate-500 md:col-span-6">
                           Kalkulation je Einheit: Lohn {euro(anteile.lohn)} + Material {euro(anteile.material)} + Gerät {euro(anteile.geraete)} + Fremd {euro(anteile.fremd)} = <b>{euro(anteile.summe)}</b>
                         </div>

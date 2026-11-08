@@ -8,6 +8,8 @@ import { FirmenTabs } from "@/components/firmen-tabs";
 import { BuchungsFormular } from "./buchungs-formular";
 import { artikelSpeichernAktion, lagerSpeichernAktion } from "./actions";
 import { Journal } from "./journal";
+import { AktionsFormular } from "@/components/aktions-formular";
+import { preisangebotAktion } from "../angebote/gaeb-actions";
 
 const LAGERART = { HAUPTLAGER: "Hauptlager", AUSSENLAGER: "Außenlager", FAHRZEUG: "Fahrzeug", BAUSTELLE: "Baustelle" } as const;
 const zahl = (v: unknown) => new Intl.NumberFormat("de-DE", { maximumFractionDigits: 3 }).format(n(v as number));
@@ -126,6 +128,17 @@ export default async function LagerSeite({ searchParams }: Props) {
             </details>
           )}
         </>
+      )}
+
+      {buero && (
+        <details className="karte text-sm">
+          <summary className="cursor-pointer font-semibold">Preisangebot vom Händler importieren (GAEB X94)</summary>
+          <p className="mt-2 text-xs text-slate-500">Zuordnung über Artikelnummer (Lieferanten- oder eigene Nummer) oder EAN. Mit Häkchen wird der Preis je Einheit als letzter EK am Artikel gespeichert.</p>
+          <AktionsFormular aktion={preisangebotAktion} knopf="Einlesen" knopfKlasse="btn-hell" encType="multipart/form-data" className="mt-2 grid gap-2 [&_[role=status]]:whitespace-pre-line">
+            <input type="file" name="datei" required accept=".x93,.x94,.x96,.x97,.xml" className="text-sm" />
+            <label className="flex items-center gap-2"><input type="checkbox" name="uebernehmen" /> Preise in die Artikel übernehmen</label>
+          </AktionsFormular>
+        </details>
       )}
 
       {ansicht === "buchungen" && <Journal firmaId={firma.id} />}
