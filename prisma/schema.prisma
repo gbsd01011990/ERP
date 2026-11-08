@@ -94,6 +94,9 @@ model Firma {
   emails        Email[]
   aufgaben      Aufgabe[]
   rechnungen    Rechnung[]
+  telefonAgent  TelefonAgent?
+  gespraeche    Gespraech[]
+  termine       Termin[]
 }
 
 model Benutzer {
@@ -123,6 +126,9 @@ model Benutzer {
   zeitenFreigabe            Zeiteintrag[]     @relation("ZeitFreigabe")
   rechnungenErstellt        Rechnung[]        @relation("RechnungErsteller")
   rechnungenFestgeschrieben Rechnung[]        @relation("RechnungFestschreiber")
+  termine                   Termin[]
+  gespraecheZustaendig      Gespraech[]
+  agentStandard             TelefonAgent[]
 }
 
 model Zugriff {
@@ -170,6 +176,9 @@ model Kontakt {
   logbuch         LogbuchEintrag[]
   emails          Email[]
   aufgaben        Aufgabe[]
+
+  gespraeche Gespraech[]
+  termine    Termin[]
 
   @@index([nachname])
   @@index([firmenname])
@@ -285,6 +294,9 @@ model Projekt {
   zeiten          Zeiteintrag[]
   emails          Email[]
   aufgaben        Aufgabe[]
+
+  gespraeche Gespraech[]
+  termine    Termin[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -1015,4 +1027,125 @@ model Verrechnung {
   vor        Rechnung @relation("Vorrechnung", fields: [vorId], references: [id])
 
   @@unique([rechnungId, vorId])
+}
+
+// ------------------------------------------------- Telefonagent und Messenger
+// Jede Firma hat ihren eigenen Agenten: eigene Nummer, Begrüßung, Regeln und Daten.
+// Die Sprachplattform (ElevenLabs mit Claude) ruft die Werkzeuge unter
+// /api/agent/<kuerzel>/... auf und meldet jedes beendete Gespräch zurück.
+
+enum Kanal {
+  TELEFON
+  WHATSAPP
+  TELEGRAM
+  SMS
+  THREEMA
+}
+
+enum GespraechStatus {
+  OFFEN
+  ERLEDIGT
+}
+
+model TelefonAgent {
+  id                   String    @id @default(cuid())
+  firmaId              String    @unique
+  aktiv                Boolean   @default(false)
+  name                 String    @default("Assistenz") // so stellt sich der Agent vor
+  begruessung          String
+  anweisungen          String? // Zusatzregeln der Firma
+  leistungen           String? // was die Firma anbietet und was nicht
+  buerozeiten          Json // { "1": ["07:00","16:00"], … } Mo=1 … So=7
+  terminZeiten         Json // Zeitfenster für Besichtigungen, gleiche Form
+  terminDauerMin       Int       @default(60)
+  terminVorlaufTage    Int       @default(2) // frühester Termin ab heute
+  terminTageVoraus     Int       @default(21)
+  weiterleitungen      Json      @default("[]") // [{ name, nummer, wofuer }]
+  notfallNummer        String?
+  notfallRegel         String?
+  standardZustaendigId String?
+  agentId              String? // ID des Agenten bei der Sprachplattform
+  schluesselHash       String? // SHA-256 des Werkzeug-Schlüssels
+  schluesselVorschau   String?
+  webhookGeheimnis     String? // HMAC-Geheimnis der Sprachplattform, verschlüsselt
+  updatedAt            DateTime  @updatedAt
+  firma                Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  standardZustaendig   Benutzer? @relation(fields: [standardZustaendigId], references: [id], onDelete: SetNull)
+}
+
+/// Ein Anruf oder ein Messenger-Verlauf mit einem Absender.
+model Gespraech {
+  id              String               @id @default(cuid())
+  firmaId         String
+  kanal           Kanal
+  externId        String? // Gesprächs-ID der Plattform bzw. Chat-ID
+  absender        String // Rufnummer oder Messenger-Kennung
+  absenderName    String?
+  kontaktId       String?
+  projektId       String?
+  zustaendigId    String?
+  status          GespraechStatus      @default(OFFEN)
+  anliegen        String?
+  zusammenfassung String?
+  ergebnis        String? // z. B. Termin gebucht, weiterverbunden, Rückruf
+  dringend        Boolean              @default(false)
+  beginn          DateTime             @default(now())
+  dauerSek        Int?
+  aufnahmeUrl     String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  firma           Firma                @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  kontakt         Kontakt?             @relation(fields: [kontaktId], references: [id], onDelete: SetNull)
+  projekt         Projekt?             @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  zustaendig      Benutzer?            @relation(fields: [zustaendigId], references: [id], onDelete: SetNull)
+  nachrichten     GespraechNachricht[]
+  termine         Termin[]
+
+  @@unique([firmaId, kanal, externId])
+  @@index([firmaId, status, beginn])
+  @@index([kontaktId])
+}
+
+model GespraechNachricht {
+  id          String    @id @default(cuid())
+  gespraechId String
+  von         String // KUNDE, AGENT, MITARBEITER, WERKZEUG
+  text        String
+  zeit        DateTime  @default(now())
+  gespraech   Gespraech @relation(fields: [gespraechId], references: [id], onDelete: Cascade)
+
+  @@index([gespraechId, zeit])
+}
+
+enum TerminArt {
+  BESICHTIGUNG
+  RUECKRUF
+  BERATUNG
+  AUSFUEHRUNG
+  SONSTIGES
+}
+
+model Termin {
+  id           String     @id @default(cuid())
+  firmaId      String
+  art          TerminArt  @default(BESICHTIGUNG)
+  titel        String
+  beginn       DateTime
+  ende         DateTime
+  ort          String?
+  notiz        String?
+  kontaktId    String?
+  projektId    String?
+  zustaendigId String?
+  gespraechId  String?
+  quelle       String? // Telefonagent, Büro …
+  abgesagt     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  firma        Firma      @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  kontakt      Kontakt?   @relation(fields: [kontaktId], references: [id], onDelete: SetNull)
+  projekt      Projekt?   @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  zustaendig   Benutzer?  @relation(fields: [zustaendigId], references: [id], onDelete: SetNull)
+  gespraech    Gespraech? @relation(fields: [gespraechId], references: [id], onDelete: SetNull)
+
+  @@index([firmaId, beginn])
 }

@@ -99,6 +99,16 @@ Rechnungen (je Mandant eigener Nummernkreis, eigenes Design):
   Nummer, Stellen, jährlich neu. GBSD startet bei 2026-114. Belegte Nummern werden abgelehnt.
 - Noch nicht: ZUGFeRD/XRechnung, GAEB X89, Zahlungseingänge und offene Posten, DATEV-Export.
 
+Telefonagent (je Firma eigener Agent; Einrichtung: [deploy/TELEFONAGENT.md](deploy/TELEFONAGENT.md)):
+
+- Nimmt Anrufe an, wenn im Büro niemand rangeht (Sprachplattform ElevenLabs mit Claude, Nummer bei Twilio,
+  Umleitung von der Telekom). Werkzeuge im ERP: Kunde an der Rufnummer erkennen, Anfrage mit Kontakt,
+  Projekt und Wiedervorlage anlegen, freie Besichtigungstermine anbieten und buchen, Angebotsstand nennen
+  (nur bei bekannter Rufnummer), Rückruf anlegen, Bürozeiten; Weiterverbinden und Notfall über die Plattform.
+- Jedes Gespräch mit Verlauf, Zusammenfassung und den Schritten des Agenten unter **Anrufe**; ohne Ergebnis
+  entsteht die Aufgabe „Anruf prüfen“. **Termine** zeigt gebuchte und von Hand eingetragene Termine.
+- Werkzeuge mit Schlüssel je Firma, Webhook mit HMAC-Signatur; Testkonsole in den Einstellungen.
+
 Mandanten:
 
 - Eigene Anmeldeseite je Firma mit Logo und Farben: `/login/gbsd`, `/login/riedrich-dremel`,
