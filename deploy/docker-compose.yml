@@ -1,0 +1,83 @@
+# Betrieb auf dem Server, aus /opt/erp/app/deploy:
+#   docker compose --env-file /opt/erp/.env up -d --build
+# Die .env liegt außerhalb des Repositorys und wird beim Ausliefern nie überschrieben.
+name: erp
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: erp
+      POSTGRES_USER: erp
+      POSTGRES_PASSWORD: ${DB_PASSWORT:?DB_PASSWORT fehlt in .env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp -d erp"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build:
+      context: ..
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://erp:${DB_PASSWORT}@db:5432/erp
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL fehlt in .env}
+      ADMIN_PASSWORT: ${ADMIN_PASSWORT:-}
+      HERO_API_TOKEN: ${HERO_API_TOKEN:-}
+    ports:
+      # Nur auf dem Server selbst erreichbar; nach außen geht es über Caddy oder euren Webserver
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      start_period: 60s
+      retries: 5
+
+  # HTTPS mit automatischem Let's-Encrypt-Zertifikat (Profil "caddy").
+  # Läuft auf dem Server schon ein Webserver auf Port 80/443, COMPOSE_PROFILES leer lassen.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["caddy"]
+    restart: unless-stopped
+    depends_on: [app]
+    environment:
+      ERP_DOMAIN: ${ERP_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_daten:/data
+      - caddy_config:/config
+
+  # Tägliche Datenbanksicherung, 30 Tage aufbewahrt
+  sicherung:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORT}
+    volumes:
+      - ${BACKUP_VERZEICHNIS:-/opt/erp/backups}:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          datei=/backups/erp_$$(date +%Y-%m-%d_%H%M).sql.gz
+          pg_dump -h db -U erp -d erp | gzip > "$$datei" && echo "Sicherung $$datei"
+          find /backups -name 'erp_*.sql.gz' -mtime +30 -delete
+          sleep 86400
+        done
+
+volumes:
+  db:
+  caddy_daten:
+  caddy_config:

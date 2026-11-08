@@ -62,7 +62,12 @@ auf dem Server in `pdf/rd/dokument/` ab.
 
 Next.js 15 (App Router, Server Actions), TypeScript, PostgreSQL mit Prisma, Tailwind CSS.
 
-## Einrichten
+## Betrieb auf dem Server
+
+Docker-Paket (App, PostgreSQL, tägliche Sicherung, HTTPS über Caddy) und automatische
+Auslieferung per GitHub Actions. Einrichtung Schritt für Schritt: [deploy/EINRICHTUNG.md](deploy/EINRICHTUNG.md).
+
+## Einrichten für Entwicklung
 
 ```bash
 npm install

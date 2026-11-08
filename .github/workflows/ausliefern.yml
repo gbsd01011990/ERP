@@ -1,0 +1,80 @@
+# Prüft jeden Push und liefert main auf den Hetzner-Server aus.
+# Benötigte Secrets (GitHub → Settings → Secrets and variables → Actions):
+#   SSH_HOST  IP oder Name des Servers
+#   SSH_USER  Benutzer auf dem Server (Mitglied der Gruppe docker)
+#   SSH_KEY   privater SSH-Schlüssel (nur für diesen Zweck erzeugt)
+#   SSH_PORT  optional, Standard 22
+# Solange SSH_HOST fehlt, läuft nur die Prüfung, die Auslieferung wird übersprungen.
+name: Prüfen und ausliefern
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ausliefern-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx tsc --noEmit
+      - run: npm test
+
+  ausliefern:
+    needs: pruefen
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    env:
+      HAT_SERVER: ${{ secrets.SSH_HOST != '' }}
+    steps:
+      - name: Server eingerichtet?
+        if: env.HAT_SERVER != 'true'
+        run: echo "::notice::SSH_HOST ist nicht gesetzt – Auslieferung übersprungen. Siehe deploy/EINRICHTUNG.md."
+
+      - uses: actions/checkout@v4
+        if: env.HAT_SERVER == 'true'
+
+      - name: Dateien auf den Server kopieren
+        if: env.HAT_SERVER == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "."
+          target: /opt/erp/app
+          rm: true
+
+      - name: Neu bauen und starten
+        if: env.HAT_SERVER == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 20m
+          script: |
+            set -e
+            cd /opt/erp/app/deploy
+            docker compose --env-file /opt/erp/.env up -d --build --remove-orphans
+            for i in $(seq 1 40); do
+              status=$(docker inspect -f '{{.State.Health.Status}}' erp-app-1 || true)
+              [ "$status" = healthy ] && break
+              sleep 3
+            done
+            echo "App-Status: $status"
+            [ "$status" = healthy ] || { docker logs --tail 50 erp-app-1; exit 1; }
+            docker image prune -f

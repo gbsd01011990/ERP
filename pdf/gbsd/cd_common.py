@@ -26,7 +26,10 @@ FARBEN = [
 
 # ---- Schriften ----
 def register_fonts():
-    base = "/usr/share/fonts/truetype/liberation/"
+    # Schriften liegen im Repository (pdf/schriften), Systemschriften als Rückfall
+    import os
+    eigene = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "schriften") + os.sep
+    base = eigene if os.path.exists(eigene + "LiberationSans-Regular.ttf") else "/usr/share/fonts/truetype/liberation/"
     pdfmetrics.registerFont(TTFont("LSans",   base + "LiberationSans-Regular.ttf"))
     pdfmetrics.registerFont(TTFont("LSans-B", base + "LiberationSans-Bold.ttf"))
     pdfmetrics.registerFont(TTFont("LSans-I", base + "LiberationSans-Italic.ttf"))
