@@ -34,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 text-sm">
             <FirmenWahl firmen={firmen} aktiv={aktiv} />
             <span className="hidden text-slate-500 sm:inline">{b.name}</span>
+            <Link href="/einstellungen/passwort" className="text-slate-500 hover:text-marke">Passwort ändern</Link>
             <form action={logoutAktion}><button className="text-slate-500 hover:text-red-600">Abmelden</button></form>
           </div>
         </div>

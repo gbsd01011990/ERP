@@ -39,7 +39,22 @@ export async function aktuellerBenutzer() {
   return s.benutzer;
 }
 
-export type AktuellerBenutzer = NonNullable<Awaited<ReturnType<typeof aktuellerBenutzer>>>;
+export const PASSWORT_MINDESTLAENGE = 12;
+
+/** Ändert das eigene Passwort. Meldet alle anderen Sitzungen des Benutzers ab. Gibt einen Fehlertext zurück oder null. */
+export async function passwortAendern(benutzerId: string, aktuell: string, neu: string, wiederholung: string) {
+  if (neu.length < PASSWORT_MINDESTLAENGE) return `Das neue Passwort braucht mindestens ${PASSWORT_MINDESTLAENGE} Zeichen.`;
+  if (neu !== wiederholung) return "Die beiden neuen Passwörter stimmen nicht überein.";
+  if (neu === aktuell) return "Das neue Passwort muss sich vom bisherigen unterscheiden.";
+  const b = await db.benutzer.findUnique({ where: { id: benutzerId } });
+  if (!b || !(await bcrypt.compare(aktuell, b.passwortHash))) return "Das bisherige Passwort ist falsch.";
+  await db.benutzer.update({ where: { id: b.id }, data: { passwortHash: await bcrypt.hash(neu, 12) } });
+  const token = (await cookies()).get(COOKIE)?.value;
+  await db.sitzung.deleteMany({ where: { benutzerId: b.id, ...(token ? { NOT: { id: hash(token) } } : {}) } });
+  return null;
+}
+
+export type AktuellerBenutzer =NonNullable<Awaited<ReturnType<typeof aktuellerBenutzer>>>;
 
 /** Erzwingt Anmeldung (und optional eine Mindestrolle). */
 export async function benutzerPflicht(rollen?: Rolle[]) {
