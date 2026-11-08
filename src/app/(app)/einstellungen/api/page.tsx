@@ -10,7 +10,7 @@ export default async function ApiEinstellungen() {
   const h = await headers();
   const basis = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const schluessel = await db.apiSchluessel.findMany({
-    where: b.rolle === "ADMIN" ? {} : { benutzerId: b.id },
+    where: { firmaId: b.mandant.id, ...(b.rolle === "ADMIN" ? {} : { benutzerId: b.id }) },
     include: { benutzer: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -26,8 +26,8 @@ export default async function ApiEinstellungen() {
 
       <section className="karte space-y-2 text-sm">
         <p>
-          Adresse: <code className="rounded bg-slate-100 px-1">{basis}/api/graphql</code>. Jeder Schlüssel hat die Rechte des Benutzers, der ihn
-          erzeugt hat, also dieselben Firmen und dieselbe Rolle. Ein Schlüssel mit „nur lesen“ kann keine Daten ändern.
+          Adresse: <code className="rounded bg-slate-100 px-1">{basis}/api/graphql</code>. Ein Schlüssel gilt nur für den Mandanten {b.mandant.name} und hat
+          die Rolle des Benutzers, der ihn erzeugt hat. Ein Schlüssel mit „nur lesen“ kann keine Daten ändern.
         </p>
         <p>
           Im Browser öffnet die Adresse den Abfrage-Editor GraphiQL mit allen Typen und Feldern. Dort gilt deine aktuelle Anmeldung, kein Schlüssel nötig.{" "}

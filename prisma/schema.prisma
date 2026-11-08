@@ -77,6 +77,8 @@ model Firma {
   artikel      Artikel[]
   geraete      Geraet[]
   kostenplaene Kostenplan[]
+  sitzungen    Sitzung[]
+  apiSchluessel ApiSchluessel[]
 }
 
 model Benutzer {
@@ -111,8 +113,10 @@ model Zugriff {
 model Sitzung {
   id         String   @id // zufälliges Token (gehasht gespeichert)
   benutzerId String
+  firmaId    String?  // Mandant, bei dem angemeldet wurde; ohne Mandant ist die Sitzung ungültig
   ablauf     DateTime
   benutzer   Benutzer @relation(fields: [benutzerId], references: [id], onDelete: Cascade)
+  firma      Firma?   @relation(fields: [firmaId], references: [id], onDelete: Cascade)
 }
 
 /// Kundenkartei ist firmenübergreifend; Fremd-IDs je Firma in KontaktFremdId.
@@ -396,12 +400,14 @@ model ApiSchluessel {
   benutzerId    String
   name          String
   hash          String    @unique
+  firmaId       String?   // Mandant, für den der Schlüssel gilt; Schlüssel ohne Mandant werden abgewiesen
   anfang        String    // erste Zeichen zur Wiedererkennung, z. B. "erp_a1b2c3"
   nurLesen      Boolean   @default(false)
   letzteNutzung DateTime?
   widerrufenAm  DateTime?
   createdAt     DateTime  @default(now())
   benutzer      Benutzer  @relation(fields: [benutzerId], references: [id], onDelete: Cascade)
+  firma         Firma?    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
 }
 
 // ---------------------------------------------------------------- Lager

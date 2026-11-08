@@ -13,8 +13,9 @@ einmal angezeigt, gespeichert wird nur sein Hash. Jede Anfrage schickt ihn im He
 Authorization: Bearer erp_…
 ```
 
-Ein Schlüssel hat dieselben Rechte wie der Benutzer, der ihn erzeugt hat: dieselben Firmen,
-dieselbe Rolle. Mit „nur lesen“ sind alle Mutationen gesperrt. Widerrufene Schlüssel
+Ein Schlüssel gilt nur für den Mandanten, in dem er erzeugt wurde, und hat die Rolle des
+Benutzers, der ihn erzeugt hat. Schlüssel aus der Zeit vor der Mandantentrennung werden abgewiesen
+und müssen neu erzeugt werden. Mit „nur lesen“ sind alle Mutationen gesperrt. Widerrufene Schlüssel
 bekommen sofort `401`.
 
 ## Abfragen

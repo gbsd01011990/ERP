@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --marke: #2f5d3a;
+  --marke-hell: #e8f0ea;
+  --marke-dunkel: #1f3f27;
+  --akzent: #8bc34a;
+}
+
 @layer components {
   .btn { @apply inline-flex items-center gap-2 rounded-md bg-marke px-3 py-2 text-sm font-medium text-white hover:bg-marke-dunkel disabled:opacity-50; }
   .btn-hell { @apply inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50; }

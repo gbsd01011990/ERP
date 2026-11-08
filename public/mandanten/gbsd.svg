@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 230" width="960" height="230">
+  <rect x="10" y="30" width="135.0" height="135.0" rx="29.7" fill="#1B5E20"/>
+  <path d="M 92.05 71.78 A 35.1 35.1 0 1 0 108.55 101.55" fill="none" stroke="#FFFFFF" stroke-width="14.174999999999999"/>
+  <line x1="73.44999999999999" y1="101.55" x2="115.64" y2="101.55" stroke="#FFFFFF" stroke-width="14.174999999999999"/>
+  <g transform="translate(98.95 68.91) rotate(-40)"><path d="M -11.475000000000001 0 C -3.4425000000000003 -9.639000000000001, 3.4425000000000003 -9.639000000000001, 11.475000000000001 0 C 3.4425000000000003 9.639000000000001, -3.4425000000000003 9.639000000000001, -11.475000000000001 0 Z" fill="#8BC34A"/></g>
+  <text x="180.0" y="135.3" font-family="Arial, Liberation Sans, sans-serif" font-weight="bold" font-size="138.88888888888889" fill="#1B5E20">GBSD</text>
+  <text x="182.0" y="179.74444444444447" font-family="Arial, Liberation Sans, sans-serif" font-size="34.02777777777778" letter-spacing="1" textLength="760" lengthAdjust="spacingAndGlyphs" fill="#78909C">GARTEN- &amp; LANDSCHAFTSBAU · BAUMPFLEGE</text>
+</svg>

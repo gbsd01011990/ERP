@@ -4,7 +4,8 @@ export default {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      colors: { marke: { DEFAULT: "#2f5d3a", hell: "#e8f0ea", dunkel: "#1f3f27" } },
+      // Markenfarben kommen als CSS-Variablen vom Mandanten (src/lib/mandanten.ts)
+      colors: { marke: { DEFAULT: "var(--marke)", hell: "var(--marke-hell)", dunkel: "var(--marke-dunkel)" }, akzent: "var(--akzent)" },
     },
   },
 } satisfies Config;

@@ -1,11 +1,8 @@
 "use server";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { benutzerPflicht, firmenIds } from "@/lib/auth";
-import { FIRMA_COOKIE } from "@/lib/firma";
+import { benutzerPflicht } from "@/lib/auth";
 import { parseZahl } from "@/lib/kalkulation";
 import { kontaktSpeichern as kontaktSpeichernDienst } from "@/lib/dienste/kontakte";
 import {
@@ -18,15 +15,6 @@ const leer = (v: FormDataEntryValue | null) => {
   const s = typeof v === "string" ? v.trim() : "";
   return s === "" ? null : s;
 };
-
-export async function firmaWaehlen(form: FormData) {
-  const b = await benutzerPflicht();
-  const wahl = String(form.get("firma") ?? "alle");
-  const jar = await cookies();
-  if (wahl !== "alle" && firmenIds(b).includes(wahl)) jar.set(FIRMA_COOKIE, wahl, { path: "/", sameSite: "lax" });
-  else jar.delete(FIRMA_COOKIE);
-  revalidatePath("/", "layout");
-}
 
 // ---------- Kontakte ----------
 

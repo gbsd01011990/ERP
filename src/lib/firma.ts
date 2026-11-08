@@ -1,16 +1,10 @@
 import "server-only";
-import { cookies } from "next/headers";
-import { firmenIds, type AktuellerBenutzer } from "./auth";
-
-export const FIRMA_COOKIE = "erp_firma";
+import type { AktuellerBenutzer } from "./auth";
 
 /**
- * Aktive Firmenauswahl: eine Firma oder "alle".
- * Liefert die Firmen-IDs, auf die Listen gefiltert werden.
+ * Firmenfilter für Listen. Seit der Anmeldung je Mandant ist das immer genau
+ * der angemeldete Mandant; die Form { aktiv, ids } bleibt für die Aufrufer gleich.
  */
 export async function firmenFilter(b: AktuellerBenutzer) {
-  const erlaubt = firmenIds(b);
-  const wahl = (await cookies()).get(FIRMA_COOKIE)?.value;
-  if (wahl && erlaubt.includes(wahl)) return { aktiv: wahl, ids: [wahl] };
-  return { aktiv: "alle" as const, ids: erlaubt };
+  return { aktiv: b.mandant.id, ids: [b.mandant.id] };
 }

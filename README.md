@@ -40,6 +40,12 @@ Schritt 3 ist fertig:
 - Kolonnen dürfen Material entnehmen, umbuchen, Einsätze und Prüfungen erfassen; Zugang, Inventur,
   Stammdaten und Plankosten bleiben dem Büro bzw. Admin vorbehalten.
 
+Mandanten:
+
+- Eigene Anmeldeseite je Firma mit Logo und Farben: `/login/gbsd`, `/login/riedrich-dremel`,
+  `/login/kusche-dremel`; `/login` zeigt die Auswahl. Wer sich bei einem Mandanten anmeldet,
+  sieht nur dessen Daten. Erscheinungsbild in `src/lib/mandanten.ts`.
+
 Schnittstelle:
 
 - GraphQL-API unter `/api/graphql` mit API-Schlüsseln je Benutzer (lesen oder lesen und schreiben),

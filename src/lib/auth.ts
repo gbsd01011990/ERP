@@ -5,18 +5,24 @@ import { createHash, randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import type { Rolle } from "@prisma/client";
 import { db } from "./db";
+import { MANDANT_COOKIE, mandantNachSlug } from "./mandanten";
 
 const COOKIE = "erp_sitzung";
 const LAUFZEIT_TAGE = 30;
 
 const hash = (t: string) => createHash("sha256").update(t).digest("hex");
 
-export async function anmelden(email: string, passwort: string) {
-  const b = await db.benutzer.findUnique({ where: { email: email.trim().toLowerCase() } });
+/**
+ * Meldet bei genau einem Mandanten an. Gelingt nur, wenn Passwort stimmt UND der Benutzer
+ * Zugriff auf diese Firma hat. Die Fehlermeldung unterscheidet beides bewusst nicht.
+ */
+export async function anmelden(email: string, passwort: string, firmaId: string) {
+  const b = await db.benutzer.findUnique({ where: { email: email.trim().toLowerCase() }, include: { zugriffe: true } });
   if (!b || !b.aktiv || !(await bcrypt.compare(passwort, b.passwortHash))) return false;
+  if (!b.zugriffe.some((z) => z.firmaId === firmaId)) return false;
   const token = randomBytes(32).toString("base64url");
   const ablauf = new Date(Date.now() + LAUFZEIT_TAGE * 864e5);
-  await db.sitzung.create({ data: { id: hash(token), benutzerId: b.id, ablauf } });
+  await db.sitzung.create({ data: { id: hash(token), benutzerId: b.id, firmaId, ablauf } });
   (await cookies()).set(COOKIE, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", expires: ablauf, path: "/" });
   return true;
 }
@@ -28,6 +34,10 @@ export async function abmelden() {
   jar.delete(COOKIE);
 }
 
+/**
+ * Angemeldeter Benutzer im Mandanten der Sitzung. Die Firmenzugriffe sind auf diesen
+ * einen Mandanten reduziert – alle Listen, Rechteprüfungen und die API sehen nur ihn.
+ */
 export async function aktuellerBenutzer() {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
@@ -35,8 +45,10 @@ export async function aktuellerBenutzer() {
     where: { id: hash(token) },
     include: { benutzer: { include: { zugriffe: { include: { firma: true } } } } },
   });
-  if (!s || s.ablauf < new Date() || !s.benutzer.aktiv) return null;
-  return s.benutzer;
+  if (!s || s.ablauf < new Date() || !s.benutzer.aktiv || !s.firmaId) return null;
+  const zugriffe = s.benutzer.zugriffe.filter((z) => z.firmaId === s.firmaId);
+  if (zugriffe.length === 0) return null; // Zugriff inzwischen entzogen
+  return { ...s.benutzer, zugriffe, mandant: zugriffe[0].firma };
 }
 
 export const PASSWORT_MINDESTLAENGE = 12;
@@ -54,15 +66,21 @@ export async function passwortAendern(benutzerId: string, aktuell: string, neu: 
   return null;
 }
 
-export type AktuellerBenutzer =NonNullable<Awaited<ReturnType<typeof aktuellerBenutzer>>>;
+export type AktuellerBenutzer = NonNullable<Awaited<ReturnType<typeof aktuellerBenutzer>>>;
 
 /** Erzwingt Anmeldung (und optional eine Mindestrolle). */
 export async function benutzerPflicht(rollen?: Rolle[]) {
   const b = await aktuellerBenutzer();
-  if (!b) redirect("/login");
+  if (!b) redirect(await loginPfad());
   if (rollen && !rollen.includes(b.rolle)) redirect("/");
   return b;
 }
 
 /** IDs der Firmen, auf die der Benutzer zugreifen darf. */
 export const firmenIds = (b: AktuellerBenutzer) => b.zugriffe.map((z) => z.firmaId);
+
+/** Anmeldeseite des zuletzt genutzten Mandanten, sonst die Auswahl. */
+export async function loginPfad() {
+  const slug = (await cookies()).get(MANDANT_COOKIE)?.value;
+  return slug && mandantNachSlug(slug) ? `/login/${slug}` : "/login";
+}
