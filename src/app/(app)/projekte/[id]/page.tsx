@@ -100,22 +100,38 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
         </section>
       </div>
 
-      {(nk.soll || nk.entnahmen.length > 0 || nk.einsaetze.length > 0) && (
+      {(nk.soll || nk.entnahmen.length > 0 || nk.einsaetze.length > 0 || nk.istLohnStunden > 0) && (
         <section className="karte overflow-x-auto text-sm">
           <h2 className="mb-1 font-semibold">Nachkalkulation</h2>
           <p className="mb-3 text-xs text-slate-500">
             {nk.basis ? `Soll aus ${nk.basis.art === "ANGEBOT" ? "Angebot" : "Auftragsbestätigung"} ${nk.basis.nummer}${nk.basis.version > 1 ? `-${nk.basis.version}` : ""}` : "Noch kein Angebot als Soll"}
-            {" · Ist aus Lagerentnahmen und Geräteeinsätzen. Lohnstunden folgen mit der Zeiterfassung."}
+            {" · Ist aus Zeiterfassung, Lagerentnahmen und Geräteeinsätzen."}
           </p>
           <table className="tabelle max-w-2xl">
             <thead><tr><th>Kostenart</th><th className="text-right">Soll</th><th className="text-right">Ist</th><th className="text-right">Abweichung</th></tr></thead>
             <tbody>
               <tr><td>Material (EK)</td><td className="text-right">{euro(nk.soll?.materialEk ?? 0)}</td><td className="text-right">{euro(nk.istMaterial)}</td><td className="text-right">{abweichung(nk.soll?.materialEk ?? 0, nk.istMaterial)}</td></tr>
               <tr><td>Geräte</td><td className="text-right">{euro(nk.soll?.geraete ?? 0)}</td><td className="text-right">{euro(nk.istGeraete)} <span className="text-xs text-slate-500">({nk.istGeraeteStunden.toLocaleString("de-DE")} h)</span></td><td className="text-right">{abweichung(nk.soll?.geraete ?? 0, nk.istGeraete)}</td></tr>
-              <tr><td>Lohnstunden</td><td className="text-right">{(nk.soll?.stunden ?? 0).toLocaleString("de-DE")} h</td><td className="text-right text-slate-400">folgt</td><td /></tr>
+              <tr>
+                <td>Lohnstunden</td>
+                <td className="text-right">{(nk.soll?.stunden ?? 0).toLocaleString("de-DE")} h</td>
+                <td className="text-right">{nk.istLohnStunden.toLocaleString("de-DE")} h</td>
+                <td className="text-right">{abweichung(nk.soll?.stunden ?? 0, nk.istLohnStunden)}</td>
+              </tr>
+              {nk.istLohn != null && (
+                <tr className="text-slate-500">
+                  <td className="pl-6">Lohn zum Kalkulationssatz</td>
+                  <td className="text-right">{euro(nk.soll?.lohnanteilNetto ?? 0)}</td>
+                  <td className="text-right">{euro(nk.istLohn)}</td>
+                  <td />
+                </tr>
+              )}
               <tr><td>Fremdleistung (EK)</td><td className="text-right">{euro(nk.soll?.fremdEk ?? 0)}</td><td className="text-right text-slate-400">folgt</td><td /></tr>
             </tbody>
           </table>
+          {nk.lohnJeMitarbeiter.length > 0 && (
+            <p className="mt-2 text-xs text-slate-500">Stunden je Mitarbeiter: {nk.lohnJeMitarbeiter.map((m) => `${m.name} ${m.stunden.toLocaleString("de-DE")} h`).join(" · ")}</p>
+          )}
           {(nk.entnahmen.length > 0 || nk.einsaetze.length > 0) && (
             <details className="mt-3">
               <summary className="cursor-pointer text-marke">Einzelbuchungen</summary>

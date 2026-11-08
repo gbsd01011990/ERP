@@ -40,6 +40,17 @@ Schritt 3 ist fertig:
 - Kolonnen dürfen Material entnehmen, umbuchen, Einsätze und Prüfungen erfassen; Zugang, Inventur,
   Stammdaten und Plankosten bleiben dem Büro bzw. Admin vorbehalten.
 
+Zeiterfassung:
+
+- Stempeluhr fürs Handy (Ein-/Ausstempeln, Tätigkeit wechseln), Nachtragen von Hand,
+  Wochenansicht mit Hinweisen nach Arbeitszeitgesetz (Pausen, über 10 Stunden).
+- Regeln: eine laufende Stempeluhr je Mitarbeiter, keine Überschneidungen, höchstens 14 h je
+  Eintrag, Projektpflicht bei Umsetzung und Vor-Ort-Termin, Einträge unter 1 Minute werden verworfen.
+- Büro: Team-Übersicht je Woche, Freigabe (danach gesperrt), CSV-Export für die Lohnabrechnung.
+- Lohnstunden-Ist fließt in die Nachkalkulation der Projekte.
+- Alle Zeiten in deutscher Ortszeit (Europe/Berlin), unabhängig von der Server-Zeitzone.
+- Benutzerverwaltung für Admins: Mitarbeiter anlegen, Rolle, Mandanten, Passwort zurücksetzen, sperren.
+
 Mandanten:
 
 - Eigene Anmeldeseite je Firma mit Logo und Farben: `/login/gbsd`, `/login/riedrich-dremel`,

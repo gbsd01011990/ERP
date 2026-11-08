@@ -79,6 +79,7 @@ model Firma {
   kostenplaene Kostenplan[]
   sitzungen    Sitzung[]
   apiSchluessel ApiSchluessel[]
+  zeiten       Zeiteintrag[]
 }
 
 model Benutzer {
@@ -99,6 +100,9 @@ model Benutzer {
   lagerBuchungen LagerBuchung[]
   geraetEreignisse GeraetEreignis[]
   geraetEinsaetze GeraetEinsatz[]
+  zeiten          Zeiteintrag[] @relation("ZeitMitarbeiter")
+  zeitenErfasst   Zeiteintrag[] @relation("ZeitErfasser")
+  zeitenFreigabe  Zeiteintrag[] @relation("ZeitFreigabe")
 }
 
 model Zugriff {
@@ -252,6 +256,7 @@ model Projekt {
   angebote       Angebot[]
   lagerBuchungen LagerBuchung[]
   geraetEinsaetze GeraetEinsatz[]
+  zeiten         Zeiteintrag[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -663,4 +668,43 @@ model KostenplanZeile {
   plan        Kostenplan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@index([planId, reihenfolge])
+}
+
+// ---------------------------------------------------------------- Zeiterfassung
+
+enum ZeitKategorie {
+  UMSETZUNG       // Arbeit auf der Baustelle
+  FAHRZEIT
+  VOR_ORT_TERMIN
+  PROJEKTIERUNG
+  BUEROARBEIT
+  AUFGABE
+  PAUSE           // zählt nicht als Arbeitszeit
+  SONSTIGE
+}
+
+/// Ein Zeitblock eines Mitarbeiters. ende = null: Stempeluhr läuft.
+/// Nach der Freigabe durch das Büro gesperrt.
+model Zeiteintrag {
+  id             String        @id @default(cuid())
+  firmaId        String
+  benutzerId     String        // Mitarbeiter
+  projektId      String?
+  kategorie      ZeitKategorie @default(UMSETZUNG)
+  beginn         DateTime
+  ende           DateTime?
+  notiz          String?
+  erfasstVonId   String?       // wer gebucht hat (Büro kann für Mitarbeiter nachtragen)
+  freigegebenAm  DateTime?
+  freigegebenVonId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  firma          Firma         @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  benutzer       Benutzer      @relation("ZeitMitarbeiter", fields: [benutzerId], references: [id], onDelete: Cascade)
+  projekt        Projekt?      @relation(fields: [projektId], references: [id])
+  erfasstVon     Benutzer?     @relation("ZeitErfasser", fields: [erfasstVonId], references: [id])
+  freigegebenVon Benutzer?     @relation("ZeitFreigabe", fields: [freigegebenVonId], references: [id])
+
+  @@index([firmaId, benutzerId, beginn])
+  @@index([projektId])
 }

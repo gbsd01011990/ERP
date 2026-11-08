@@ -120,6 +120,14 @@ export const typeDefs = /* GraphQL */ `
     einsaetze(first: Int = 50): [GeraetEinsatz!]!
   }
 
+  enum ZeitKategorie { UMSETZUNG FAHRZEIT VOR_ORT_TERMIN PROJEKTIERUNG BUEROARBEIT AUFGABE PAUSE SONSTIGE }
+  type Zeiteintrag {
+    id: ID! mitarbeiter: Benutzer! kategorie: ZeitKategorie! projekt: Projekt
+    beginn: DateTime! "null = Stempeluhr läuft" ende: DateTime
+    "Dauer in Minuten (laufende bis jetzt)" minuten: Int!
+    notiz: String freigegeben: Boolean! freigegebenAm: DateTime
+  }
+
   type KontaktSeite { gesamt: Int! eintraege: [Kontakt!]! }
   type ProjektSeite { gesamt: Int! eintraege: [Projekt!]! }
   type LeistungSeite { gesamt: Int! eintraege: [Leistung!]! }
@@ -142,6 +150,8 @@ export const typeDefs = /* GraphQL */ `
     lagerBuchungen(firmaId: ID!, artikelId: ID, projektId: ID, first: Int = 50, offset: Int = 0): [LagerBuchung!]!
     geraete(firmaId: ID!, status: GeraetStatus, nurFaellig: Boolean = false): [Geraet!]!
     geraet(id: ID!): Geraet
+    "Zeiteinträge im Mandanten des Schlüssels; Kolonne sieht nur eigene"
+    zeiteintraege(von: DateTime!, bis: DateTime!, mitarbeiterId: ID, projektId: ID, nurFreigegeben: Boolean = false): [Zeiteintrag!]!
   }
 
   input KontaktEingabe {
@@ -184,6 +194,8 @@ export const typeDefs = /* GraphQL */ `
     beleg: String notiz: String
   }
 
+  input ZeitEingabe { mitarbeiterId: ID kategorie: ZeitKategorie! projektId: ID beginn: DateTime! ende: DateTime! notiz: String }
+
   input GeraetEinsatzEingabe { projektId: ID! datum: DateTime! stunden: Float! notiz: String }
 
   type Mutation {
@@ -201,5 +213,10 @@ export const typeDefs = /* GraphQL */ `
     lagerBuchen(eingabe: LagerBuchungEingabe!): LagerBuchung!
     "Geräteeinsatz auf ein Projekt; der aktuelle Maschinensatz wird eingefroren"
     geraetEinsatzErfassen(geraetId: ID!, eingabe: GeraetEinsatzEingabe!): GeraetEinsatz!
+    "Stempeluhr starten (beendet eine laufende)"
+    zeitStarten(kategorie: ZeitKategorie = UMSETZUNG, projektId: ID, notiz: String): Zeiteintrag!
+    zeitStoppen: Zeiteintrag!
+    "Abgeschlossenen Eintrag erfassen (ohne mitarbeiterId: für sich selbst)"
+    zeitErfassen(eingabe: ZeitEingabe!): Zeiteintrag!
   }
 `;

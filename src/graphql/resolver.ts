@@ -12,6 +12,8 @@ import { angebotAnlegen, positionHinzufuegen, type PositionEingabe } from "@/lib
 import { buchen, type BuchungEingabe } from "@/lib/dienste/lager";
 import { einsatzErfassen } from "@/lib/dienste/geraete";
 import { maschinensatz, pruefAmpel } from "@/lib/rechnung/geraete";
+import { starten, stoppen, eintragSpeichern } from "@/lib/dienste/zeiten";
+import type { Zeiteintrag, ZeitKategorie } from "@prisma/client";
 import type { Artikel, Bestand, Lager, LagerBuchung, Geraet, GeraetPruefung, GeraetEinsatz } from "@prisma/client";
 
 export type Kontext = { benutzer: AktuellerBenutzer; nurLesen: boolean };
@@ -171,6 +173,20 @@ export const resolvers = {
       const g = await db.geraet.findUnique({ where: { id: a.id } });
       return g && firmenIds(ctx.benutzer).includes(g.firmaId) ? g : null;
     },
+    zeiteintraege: (_: unknown, a: { von: Date; bis: Date; mitarbeiterId?: string; projektId?: string; nurFreigegeben?: boolean }, ctx: Kontext) => {
+      const kolonne = ctx.benutzer.rolle === "KOLONNE";
+      return db.zeiteintrag.findMany({
+        where: {
+          firmaId: ctx.benutzer.mandant.id,
+          beginn: { gte: a.von, lt: a.bis },
+          ...(kolonne ? { benutzerId: ctx.benutzer.id } : a.mitarbeiterId ? { benutzerId: a.mitarbeiterId } : {}),
+          ...(a.projektId ? { projektId: a.projektId } : {}),
+          ...(a.nurFreigegeben ? { freigegebenAm: { not: null } } : {}),
+        },
+        orderBy: { beginn: "asc" },
+        take: 5000,
+      });
+    },
   },
 
   Mutation: {
@@ -192,6 +208,21 @@ export const resolvers = {
     lagerBuchen: (_: unknown, a: { eingabe: BuchungEingabe }, ctx: Kontext) => (schreiben(ctx), buchen(ctx.benutzer, a.eingabe)),
     geraetEinsatzErfassen: (_: unknown, a: { geraetId: string; eingabe: { projektId: string; datum: Date; stunden: number; notiz?: string } }, ctx: Kontext) =>
       (schreiben(ctx), einsatzErfassen(ctx.benutzer, a.geraetId, a.eingabe)),
+    zeitStarten: (_: unknown, a: { kategorie: ZeitKategorie; projektId?: string; notiz?: string }, ctx: Kontext) =>
+      (schreiben(ctx), starten(ctx.benutzer, a)),
+    zeitStoppen: (_: unknown, __: unknown, ctx: Kontext) => (schreiben(ctx), stoppen(ctx.benutzer)),
+    zeitErfassen: (_: unknown, a: { eingabe: { mitarbeiterId?: string; kategorie: ZeitKategorie; projektId?: string; beginn: Date; ende: Date; notiz?: string } }, ctx: Kontext) => {
+      schreiben(ctx);
+      const { mitarbeiterId, ...rest } = a.eingabe;
+      return eintragSpeichern(ctx.benutzer, null, { ...rest, benutzerId: mitarbeiterId ?? ctx.benutzer.id });
+    },
+  },
+
+  Zeiteintrag: {
+    mitarbeiter: (z: Zeiteintrag) => db.benutzer.findUniqueOrThrow({ where: { id: z.benutzerId }, include: { zugriffe: { include: { firma: true } } } }),
+    projekt: (z: Zeiteintrag) => (z.projektId ? db.projekt.findUnique({ where: { id: z.projektId } }) : null),
+    minuten: (z: Zeiteintrag) => Math.round(((z.ende ?? new Date()).getTime() - z.beginn.getTime()) / 60000),
+    freigegeben: (z: Zeiteintrag) => z.freigegebenAm != null,
   },
 
   Artikel: {

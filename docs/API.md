@@ -57,6 +57,10 @@ Listen sind seitenweise: `first` (höchstens 200) und `offset`, Antwort mit `ges
 | `angebotPositionHinzufuegen(angebotId, eingabe)` | Titel, Position (frei oder aus `leistungId`) oder Hinweistext |
 | `lagerBuchen(eingabe)` | Zugang, Abgang, Umbuchung, Inventur oder Entnahme auf ein Projekt |
 | `geraetEinsatzErfassen(geraetId, eingabe)` | Geräteeinsatz auf ein Projekt mit eingefrorenem Maschinensatz |
+| `zeitStarten(kategorie, projektId)` / `zeitStoppen` | Stempeluhr des Schlüssel-Benutzers |
+| `zeitErfassen(eingabe)` | Abgeschlossener Zeiteintrag; Büro auch für andere Mitarbeiter |
+
+Zeiten lesen: `zeiteintraege(von, bis, mitarbeiterId, projektId, nurFreigegeben)`. Kolonnen sehen nur eigene.
 
 Lager und Geräte lesen: `lager(firmaId)`, `artikel(firmaId, suche, nurUnterMindestbestand)`,
 `lagerBuchungen(firmaId, artikelId, projektId)`, `geraete(firmaId, status, nurFaellig)`, `geraet(id)`.
