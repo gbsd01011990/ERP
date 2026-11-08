@@ -40,7 +40,7 @@ Beim Domain-Anbieter einen DNS-Eintrag anlegen, z. B.:
 |---|---|---|
 | A | erp | IP-Adresse des Servers |
 
-Ergibt `erp.gbsd-werder.de`. Bis der Eintrag wirkt, kann es einige Minuten dauern.
+Ergibt `erp.baumpflegebund.de` (Domain baumpflegebund.de). Bis der Eintrag wirkt, kann es einige Minuten dauern.
 
 ## 4. Verzeichnis und Einstellungen
 
