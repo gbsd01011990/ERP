@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useEffect, useState } from "react";
+import { useFormularAktion } from "@/components/formular-aktion";
+import { useEffect, useState } from "react";
 import { startenAktion, stoppenAktion } from "./actions";
 import { KATEGORIE_TEXT } from "@/lib/zeit-texte";
 
@@ -18,8 +19,8 @@ function Laufzeit({ seit }: { seit: string }) {
 }
 
 export function Stempeluhr({ laufend, projekte, seitText }: { laufend: Laufend; projekte: Opt[]; seitText: string }) {
-  const [startState, start, startet] = useActionState(startenAktion, null);
-  const [stopState, stop, stoppt] = useActionState(stoppenAktion, null);
+  const { state: startState, onSubmit: start, laeuft: startet } = useFormularAktion(startenAktion);
+  const { state: stopState, onSubmit: stop, laeuft: stoppt } = useFormularAktion(stoppenAktion);
   const [kategorie, setKategorie] = useState<string>("UMSETZUNG");
   const meldung = [startState, stopState].filter(Boolean).sort((a, b) => b!.zeit - a!.zeit)[0];
 
@@ -31,7 +32,7 @@ export function Stempeluhr({ laufend, projekte, seitText }: { laufend: Laufend; 
             <div className="text-sm text-slate-500">{KATEGORIE_TEXT[laufend.kategorie]}{laufend.projekt ? ` · ${laufend.projekt}` : ""} · seit {seitText}</div>
             <Laufzeit seit={laufend.beginn} />
           </div>
-          <form action={stop} className="ml-auto">
+          <form onSubmit={stop} className="ml-auto">
             <button className="rounded-lg bg-red-600 px-6 py-4 text-lg font-semibold text-white hover:bg-red-700 disabled:opacity-50" disabled={stoppt}>Ausstempeln</button>
           </form>
         </div>
@@ -39,7 +40,7 @@ export function Stempeluhr({ laufend, projekte, seitText }: { laufend: Laufend; 
         <p className="text-sm text-slate-500">Nicht eingestempelt.</p>
       )}
 
-      <form action={start} className="grid gap-3 sm:grid-cols-[1fr_2fr_auto]" key={startState?.zeit}>
+      <form onSubmit={start} className="grid gap-3 sm:grid-cols-[1fr_2fr_auto]" key={startState?.ok ? startState.zeit : undefined}>
         <div>
           <label className="label" htmlFor="kategorie">Tätigkeit</label>
           <select id="kategorie" name="kategorie" value={kategorie} onChange={(e) => setKategorie(e.target.value)} className="eingabe py-3">

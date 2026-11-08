@@ -1,11 +1,11 @@
 "use client";
-import { useActionState } from "react";
+import { useFormularAktion } from "@/components/formular-aktion";
 import { loginAktion } from "../actions";
 
 export function LoginFormular({ slug, name }: { slug: string; name: string }) {
-  const [state, aktion, laeuft] = useActionState(loginAktion, null);
+  const { state, onSubmit, laeuft } = useFormularAktion(loginAktion);
   return (
-    <form action={aktion} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       <input type="hidden" name="mandant" value={slug} />
       <div>
         <label className="label" htmlFor="email">E-Mail</label>

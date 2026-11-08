@@ -6,6 +6,8 @@ import { euro, datum, datumZeit, kontaktName } from "@/lib/format";
 import { logbuchEintragen, projektStatusSetzen } from "../../actions";
 import { angebotAnlegen } from "../../angebote/actions";
 import { nachkalkulation } from "@/lib/nachkalkulation";
+import { AufgabenListe, aufgabeInclude } from "@/components/aufgaben-liste";
+import { AufgabeFormular } from "@/components/aufgabe-formular";
 
 const ART_TEXT = { NOTIZ: "Notiz", ANRUF: "Anruf", EMAIL: "E-Mail", TERMIN: "Termin", STATUS: "Status", SYSTEM: "System" } as const;
 
@@ -25,9 +27,13 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
     },
   });
   if (!p || !firmenIds(b).includes(p.firmaId)) notFound();
-  const [alleStatus, nk] = await Promise.all([
+  const buero = b.rolle !== "KOLONNE";
+  const [alleStatus, nk, aufgaben, mails, mitarbeiter] = await Promise.all([
     db.pipelineStatus.findMany({ where: { firmaId: p.firmaId }, orderBy: { reihenfolge: "asc" } }),
     nachkalkulation(p.id),
+    db.aufgabe.findMany({ where: { projektId: p.id, erledigtAm: null }, include: aufgabeInclude, orderBy: [{ faelligAm: { sort: "asc", nulls: "last" } }] }),
+    buero ? db.email.findMany({ where: { projektId: p.id }, orderBy: { empfangenAm: "desc" }, take: 30 }) : [],
+    db.benutzer.findMany({ where: { aktiv: true, zugriffe: { some: { firmaId: p.firmaId } } }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
   const abweichung = (soll: number, ist: number) =>
     soll > 0 ? <span className={ist > soll ? "text-red-700" : "text-emerald-700"}>{ist > soll ? "+" : ""}{Math.round(((ist - soll) / soll) * 100)} %</span> : null;
@@ -98,6 +104,34 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
           {p.angebote.length === 0 && <p className="text-slate-500">Noch keine Angebote.</p>}
           <p className="pt-2 text-xs text-slate-400">Rechnungen über Lexware folgen im nächsten Schritt.</p>
         </section>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="karte space-y-3">
+          <h2 className="font-semibold">Aufgaben und Wiedervorlagen</h2>
+          <AufgabenListe aufgaben={aufgaben} bezugZeigen={false} />
+          {buero && <AufgabeFormular mitarbeiter={mitarbeiter} ichId={b.id} projektId={p.id} />}
+        </section>
+        {buero && (
+          <section className="karte space-y-2 text-sm">
+            <div className="flex items-center">
+              <h2 className="font-semibold">E-Mails</h2>
+              <Link href={`/posteingang/schreiben?projekt=${p.id}`} className="btn-hell ml-auto py-1">E-Mail schreiben</Link>
+            </div>
+            <ul className="divide-y divide-slate-100">
+              {mails.map((m) => (
+                <li key={m.id}>
+                  <Link href={`/posteingang/${m.id}`} className="flex gap-3 py-1.5 hover:bg-slate-50">
+                    <span className="w-24 shrink-0 text-slate-400">{datumZeit(m.empfangenAm)}</span>
+                    <span className="w-4 shrink-0 text-slate-400" title={m.richtung === "AUSGANG" ? "gesendet" : "empfangen"}>{m.richtung === "AUSGANG" ? "→" : "←"}</span>
+                    <span className={`min-w-0 flex-1 truncate ${m.gelesen ? "" : "font-semibold"}`}>{m.betreff}</span>
+                  </Link>
+                </li>
+              ))}
+              {mails.length === 0 && <li className="py-1 text-slate-500">Noch keine E-Mails zu diesem Projekt.</li>}
+            </ul>
+          </section>
+        )}
       </div>
 
       {(nk.soll || nk.entnahmen.length > 0 || nk.einsaetze.length > 0 || nk.istLohnStunden > 0) && (

@@ -1,11 +1,11 @@
 "use client";
-import { useActionState } from "react";
+import { useFormularAktion } from "@/components/formular-aktion";
 import { einsatzAktion } from "./actions";
 
 export function EinsatzFormular({ geraetId, projekte, heute }: { geraetId: string; projekte: { id: string; text: string }[]; heute: string }) {
-  const [state, aktion, laeuft] = useActionState(einsatzAktion, null);
+  const { state, onSubmit, laeuft } = useFormularAktion(einsatzAktion);
   return (
-    <form action={aktion} key={state?.zeit} className="grid gap-3 md:grid-cols-6">
+    <form onSubmit={onSubmit} key={state?.ok ? state.zeit : undefined} className="grid gap-3 md:grid-cols-6">
       <input type="hidden" name="geraetId" value={geraetId} />
       <div className="md:col-span-2">
         <label className="label" htmlFor="projektId">Projekt</label>

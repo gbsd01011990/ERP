@@ -63,6 +63,10 @@ model Firma {
   fremdAufschlag     Decimal @default(15) @db.Decimal(5, 2)  // % auf Fremdleistung
   mwstSatz           Decimal @default(19) @db.Decimal(4, 2)
   angebotGueltigTage Int     @default(14)
+  // Microsoft 365 (App-Berechtigung); leer = Werte aus MS_TENANT_ID/MS_CLIENT_ID/MS_CLIENT_SECRET
+  msTenantId         String?
+  msClientId         String?
+  msClientSecret     String?  // verschlüsselt
   createdAt      DateTime @default(now())
 
   zugriffe     Zugriff[]
@@ -80,6 +84,10 @@ model Firma {
   sitzungen    Sitzung[]
   apiSchluessel ApiSchluessel[]
   zeiten       Zeiteintrag[]
+  logbuch      LogbuchEintrag[]
+  postfaecher  Postfach[]
+  emails       Email[]
+  aufgaben     Aufgabe[]
 }
 
 model Benutzer {
@@ -100,6 +108,10 @@ model Benutzer {
   lagerBuchungen LagerBuchung[]
   geraetEreignisse GeraetEreignis[]
   geraetEinsaetze GeraetEinsatz[]
+  postfaecher     Postfach[]
+  postfachZugriffe PostfachZugriff[]
+  aufgabenZustaendig Aufgabe[] @relation("AufgabeZustaendig")
+  aufgabenErstellt   Aufgabe[] @relation("AufgabeErsteller")
   zeiten          Zeiteintrag[] @relation("ZeitMitarbeiter")
   zeitenErfasst   Zeiteintrag[] @relation("ZeitErfasser")
   zeitenFreigabe  Zeiteintrag[] @relation("ZeitFreigabe")
@@ -147,6 +159,9 @@ model Kontakt {
   ansprechpartner  Ansprechpartner[]
   projekte         Projekt[]
   fremdIds         KontaktFremdId[]
+  logbuch          LogbuchEintrag[]
+  emails           Email[]
+  aufgaben         Aufgabe[]
 
   @@index([nachname])
   @@index([firmenname])
@@ -257,23 +272,31 @@ model Projekt {
   lagerBuchungen LagerBuchung[]
   geraetEinsaetze GeraetEinsatz[]
   zeiten         Zeiteintrag[]
+  emails         Email[]
+  aufgaben       Aufgabe[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
   @@index([statusId])
 }
 
+/// Logbuch eines Projekts oder (ohne Projekt) eines Kontakts im Mandanten.
 model LogbuchEintrag {
   id         String     @id @default(cuid())
-  projektId  String
+  projektId  String?
+  kontaktId  String?
+  firmaId    String?    // Pflicht für Kontakt-Einträge: die Kartei ist gemeinsam, Notizen gehören dem Mandanten
   benutzerId String?
   art        LogbuchArt @default(NOTIZ)
   text       String
   createdAt  DateTime   @default(now())
-  projekt    Projekt    @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projekt    Projekt?   @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  kontakt    Kontakt?   @relation(fields: [kontaktId], references: [id], onDelete: Cascade)
+  firma      Firma?     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
   benutzer   Benutzer?  @relation(fields: [benutzerId], references: [id])
 
   @@index([projektId, createdAt])
+  @@index([kontaktId, firmaId, createdAt])
 }
 
 // ---------------------------------------------------------------- Angebote
@@ -707,4 +730,112 @@ model Zeiteintrag {
 
   @@index([firmaId, benutzerId, beginn])
   @@index([projektId])
+}
+
+// ---------------------------------------------------------------- E-Mail (Microsoft 365)
+
+enum PostfachArt {
+  PERSOENLICH // Postfach eines Mitarbeiters, nur er sieht nicht zugeordnete Mails
+  GETEILT     // z. B. info@ oder rechnung@, sichtbar für freigegebene Mitarbeiter
+}
+
+/// Microsoft-365-Postfach im Mandanten. Abruf über die App-Berechtigung der Firma (kein Login je Mitarbeiter).
+model Postfach {
+  id               String      @id @default(cuid())
+  firmaId          String
+  art              PostfachArt @default(PERSOENLICH)
+  adresse          String
+  name             String?     // Anzeigename, z. B. "Info" oder "Rechnungen"
+  benutzerId       String?     // Inhaber bei persönlichen Postfächern
+  deltaPosteingang String?
+  deltaGesendet    String?
+  abrufAb          DateTime    // erster Abruf ab diesem Datum
+  letzterAbruf     DateTime?
+  fehler           String?
+  aktiv            Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  firma            Firma       @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  benutzer         Benutzer?   @relation(fields: [benutzerId], references: [id], onDelete: SetNull)
+  zugriffe         PostfachZugriff[]
+  emails           Email[]
+
+  @@unique([firmaId, adresse])
+}
+
+/// Freigabe eines geteilten Postfachs für einen Mitarbeiter (lesen und daraus senden).
+model PostfachZugriff {
+  postfachId String
+  benutzerId String
+  postfach   Postfach @relation(fields: [postfachId], references: [id], onDelete: Cascade)
+  benutzer   Benutzer @relation(fields: [benutzerId], references: [id], onDelete: Cascade)
+
+  @@id([postfachId, benutzerId])
+}
+
+enum EmailRichtung {
+  EINGANG
+  AUSGANG
+}
+
+model Email {
+  id            String        @id @default(cuid())
+  firmaId       String
+  postfachId    String
+  graphId       String        // ID bei Microsoft
+  internetId    String?       // Message-ID-Header, erkennt dieselbe Mail in mehreren Postfächern
+  konversation  String?
+  richtung      EmailRichtung
+  betreff       String
+  vonName       String?
+  vonAdresse    String
+  an            String[]      // Adressen
+  cc            String[]
+  vorschau      String?
+  text          String?       // Klartext (HTML wird nicht gespeichert)
+  hatAnhaenge   Boolean       @default(false)
+  webLink       String?       // Öffnen in Outlook im Web
+  empfangenAm   DateTime
+  gelesen       Boolean       @default(false)
+  kontaktId     String?
+  projektId     String?
+  zuordnung     String?       // AUTO | HAND
+  ignoriert     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  firma         Firma         @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  postfach      Postfach      @relation(fields: [postfachId], references: [id], onDelete: Cascade)
+  kontakt       Kontakt?      @relation(fields: [kontaktId], references: [id], onDelete: SetNull)
+  projekt       Projekt?      @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  aufgaben      Aufgabe[]
+
+  @@unique([postfachId, graphId])
+  @@index([firmaId, empfangenAm])
+  @@index([kontaktId])
+  @@index([projektId])
+}
+
+// ---------------------------------------------------------------- CRM: Aufgaben und Wiedervorlagen
+
+model Aufgabe {
+  id            String    @id @default(cuid())
+  firmaId       String
+  titel         String
+  notiz         String?
+  faelligAm     DateTime? // Tag (12:00 UTC)
+  zustaendigId  String?
+  erstelltVonId String?
+  kontaktId     String?
+  projektId     String?
+  emailId       String?
+  erledigtAm    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  firma         Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  zustaendig    Benutzer? @relation("AufgabeZustaendig", fields: [zustaendigId], references: [id], onDelete: SetNull)
+  erstelltVon   Benutzer? @relation("AufgabeErsteller", fields: [erstelltVonId], references: [id], onDelete: SetNull)
+  kontakt       Kontakt?  @relation(fields: [kontaktId], references: [id], onDelete: SetNull)
+  projekt       Projekt?  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  email         Email?    @relation(fields: [emailId], references: [id], onDelete: SetNull)
+
+  @@index([firmaId, erledigtAm, faelligAm])
+  @@index([zustaendigId, erledigtAm])
 }

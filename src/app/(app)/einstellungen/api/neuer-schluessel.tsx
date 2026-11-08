@@ -1,12 +1,12 @@
 "use client";
-import { useActionState } from "react";
+import { useFormularAktion } from "@/components/formular-aktion";
 import { schluesselErstellen } from "./actions";
 
 export function NeuerSchluessel() {
-  const [state, aktion, laeuft] = useActionState(schluesselErstellen, null);
+  const { state, onSubmit, laeuft } = useFormularAktion(schluesselErstellen);
   return (
     <div className="space-y-3">
-      <form action={aktion} className="flex flex-wrap items-end gap-2">
+      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
         <div>
           <label className="label" htmlFor="name">Name</label>
           <input id="name" name="name" placeholder="z. B. Zapier" className="eingabe w-64" />

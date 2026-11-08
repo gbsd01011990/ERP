@@ -1,11 +1,11 @@
 "use client";
-import { useActionState } from "react";
+import { useFormularAktion } from "@/components/formular-aktion";
 import { passwortAendernAktion } from "./actions";
 
 export function PasswortFormular({ mindestlaenge }: { mindestlaenge: number }) {
-  const [state, aktion, laeuft] = useActionState(passwortAendernAktion, null);
+  const { state, onSubmit, laeuft } = useFormularAktion(passwortAendernAktion);
   return (
-    <form action={aktion} className="karte max-w-sm space-y-4" key={state && "ok" in state ? "fertig" : "offen"}>
+    <form onSubmit={onSubmit} className="karte max-w-sm space-y-4" key={state && "ok" in state ? "fertig" : "offen"}>
       <div>
         <label className="label" htmlFor="aktuell">Bisheriges Passwort</label>
         <input id="aktuell" name="aktuell" type="password" required autoComplete="current-password" className="eingabe" />

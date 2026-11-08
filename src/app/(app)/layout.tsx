@@ -6,6 +6,8 @@ import { logoutAktion, mandantWechseln } from "../login/actions";
 
 const NAV = [
   { href: "/", text: "Übersicht" },
+  { href: "/posteingang", text: "Posteingang" },
+  { href: "/aufgaben", text: "Aufgaben" },
   { href: "/zeiten", text: "Zeiten" },
   { href: "/projekte", text: "Projekte" },
   { href: "/angebote", text: "Angebote" },
@@ -15,6 +17,7 @@ const NAV = [
   { href: "/geraete", text: "Geräte" },
   { href: "/plankosten", text: "Plankosten", nurAdmin: true },
   { href: "/einstellungen/benutzer", text: "Benutzer", nurAdmin: true },
+  { href: "/einstellungen/postfaecher", text: "Postfächer", nurAdmin: true },
   { href: "/einstellungen/api", text: "API", buero: true },
 ];
 

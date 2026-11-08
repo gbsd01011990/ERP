@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useFormularAktion } from "@/components/formular-aktion";
+import { useState } from "react";
 import { buchenAktion } from "./actions";
 
 type Opt = { id: string; text: string };
@@ -15,7 +16,7 @@ export function BuchungsFormular({ artikel, lager, projekte, nurEntnahme, voraus
   artikel: Opt[]; lager: Opt[]; projekte: Opt[]; nurEntnahme?: boolean; vorauswahl?: string;
 }) {
   const [art, setArt] = useState<string>("PROJEKT");
-  const [state, aktion, laeuft] = useActionState(buchenAktion, null);
+  const { state, onSubmit, laeuft } = useFormularAktion(buchenAktion);
   const arten = nurEntnahme ? ARTEN.filter(([a]) => a !== "ZUGANG" && a !== "INVENTUR") : ARTEN;
   const von = art === "ABGANG" || art === "PROJEKT" || art === "UMBUCHUNG";
   const nach = art === "ZUGANG" || art === "UMBUCHUNG" || art === "INVENTUR";
@@ -29,7 +30,7 @@ export function BuchungsFormular({ artikel, lager, projekte, nurEntnahme, voraus
     </div>
   );
   return (
-    <form action={aktion} className="grid gap-3 md:grid-cols-4" key={state?.zeit}>
+    <form onSubmit={onSubmit} className="grid gap-3 md:grid-cols-4" key={state?.ok ? state.zeit : undefined}>
       <div>
         <label className="label" htmlFor="art">Buchungsart</label>
         <select id="art" name="art" value={art} onChange={(e) => setArt(e.target.value)} className="eingabe">

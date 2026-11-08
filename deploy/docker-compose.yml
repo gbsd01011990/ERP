@@ -30,6 +30,10 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL fehlt in .env}
       ADMIN_PASSWORT: ${ADMIN_PASSWORT:-}
       HERO_API_TOKEN: ${HERO_API_TOKEN:-}
+      ERP_SCHLUESSEL: ${ERP_SCHLUESSEL:-}
+      MS_TENANT_ID: ${MS_TENANT_ID:-}
+      MS_CLIENT_ID: ${MS_CLIENT_ID:-}
+      MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
       TZ: Europe/Berlin
     ports:
       # Nur auf dem Server selbst erreichbar; nach außen geht es über Caddy oder euren Webserver
@@ -39,6 +43,24 @@ services:
       interval: 15s
       start_period: 60s
       retries: 5
+
+  # Ruft die Microsoft-365-Postfächer regelmäßig ab (gleiches Image wie die App)
+  mailabruf:
+    build:
+      context: ..
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://erp:${DB_PASSWORT}@db:5432/erp
+      ERP_SCHLUESSEL: ${ERP_SCHLUESSEL:-}
+      MS_TENANT_ID: ${MS_TENANT_ID:-}
+      MS_CLIENT_ID: ${MS_CLIENT_ID:-}
+      MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
+      MAIL_INTERVALL_SEKUNDEN: ${MAIL_INTERVALL_SEKUNDEN:-120}
+      TZ: Europe/Berlin
+    command: ["npm", "run", "mail:abruf"]
 
   # HTTPS mit automatischem Let's-Encrypt-Zertifikat (Profil "caddy").
   # Läuft auf dem Server schon ein Webserver auf Port 80/443, COMPOSE_PROFILES leer lassen.

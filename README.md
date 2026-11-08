@@ -40,6 +40,20 @@ Schritt 3 ist fertig:
 - Kolonnen dürfen Material entnehmen, umbuchen, Einsätze und Prüfungen erfassen; Zugang, Inventur,
   Stammdaten und Plankosten bleiben dem Büro bzw. Admin vorbehalten.
 
+E-Mail und CRM:
+
+- Microsoft 365 per App-Berechtigung je Mandant; Admin weist jedem Mitarbeiter sein Postfach zu und
+  gibt geteilte Postfächer (info@, rechnung@) einzelnen Mitarbeitern frei. Einrichtung: [deploy/MICROSOFT.md](deploy/MICROSOFT.md).
+- Abruf alle 2 Minuten (Dienst `mailabruf`), automatische Zuordnung über Absender/Empfänger zu Kontakt
+  und offenem Projekt, Konversationen bleiben zusammen, keine Dubletten über mehrere Postfächer.
+- Posteingang für nicht zugeordnete Mails: zuordnen, ausblenden, als neue Anfrage anlegen
+  (Kontakt + Projekt + Wiedervorlage), Aufgabe anlegen.
+- Senden und Antworten aus dem ERP (eigenes oder freigegebenes Postfach), Angebot als PDF-Anhang
+  direkt aus dem Angebot; gesendete Mails landen im Projekt und Logbuch.
+- Anfrage am Telefon erfassen (`/anfragen/neu`), Aufgaben und Wiedervorlagen mit Zuständigem und
+  Fälligkeit, Kontakt-Zeitleiste mit Notizen, Anrufen, Mails und Projekt-Logbuch.
+- Formulare behalten Eingaben bei Fehlermeldungen.
+
 Zeiterfassung:
 
 - Stempeluhr fürs Handy (Ein-/Ausstempeln, Tätigkeit wechseln), Nachtragen von Hand,
@@ -92,7 +106,8 @@ cp .env.example .env            # DATABASE_URL, ADMIN_EMAIL, ADMIN_PASSWORT eint
 npm run db:push                 # Tabellen anlegen
 npm run db:seed                 # Firmen, Pipeline, Nummernkreise, erster Admin
 npm run dev                     # http://localhost:3000
-npm test                        # Kalkulationstests
+npm test                        # Rechentests
+npm run test:integration        # Microsoft-Anbindung gegen nachgebauten Server (braucht Datenbank)
 ```
 
 ## Daten aus HERO übernehmen

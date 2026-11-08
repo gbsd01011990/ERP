@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useFormularAktion } from "@/components/formular-aktion";
 import { eintragAktion } from "./actions";
 import { KATEGORIE_TEXT } from "@/lib/zeit-texte";
 
@@ -8,9 +8,9 @@ export type EintragWerte = { id?: string; tag: string; von: string; bis: string;
 
 /** Formular für einen Eintrag von Hand oder zum Korrigieren. */
 export function EintragFormular({ benutzerId, projekte, werte, gesperrt }: { benutzerId: string; projekte: Opt[]; werte: EintragWerte; gesperrt?: boolean }) {
-  const [state, aktion, laeuft] = useActionState(eintragAktion, null);
+  const { state, onSubmit, laeuft } = useFormularAktion(eintragAktion);
   return (
-    <form action={aktion} key={state?.ok ? state.zeit : undefined} className="grid grid-cols-2 gap-2 sm:grid-cols-[9rem_6rem_6rem_10rem_1fr]">
+    <form onSubmit={onSubmit} key={state?.ok ? state.zeit : undefined} className="grid grid-cols-2 gap-2 sm:grid-cols-[9rem_6rem_6rem_10rem_1fr]">
       <input type="hidden" name="benutzerId" value={benutzerId} />
       {werte.id && <input type="hidden" name="id" value={werte.id} />}
       <fieldset disabled={gesperrt} className="contents">

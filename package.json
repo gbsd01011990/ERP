@@ -11,7 +11,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "import:hero": "tsx scripts/hero-import.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test scripts/tests/*.test.ts"
+    "test": "tsx --test scripts/tests/*.test.ts",
+    "test:integration": "NODE_OPTIONS=--require=./scripts/ohne-server-only.cjs tsx --test scripts/tests/*.itest.ts",
+    "mail:abruf": "NODE_OPTIONS=--require=./scripts/ohne-server-only.cjs tsx scripts/mail-abruf.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

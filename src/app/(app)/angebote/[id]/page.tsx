@@ -52,6 +52,7 @@ export default async function AngebotSeite({ params }: { params: Promise<{ id: s
         </div>
         <div className="ml-auto flex flex-wrap gap-2">
           <a href={`/angebote/${a.id}/pdf`} target="_blank" className="btn-hell">PDF ansehen</a>
+          {b.rolle !== "KOLONNE" && <Link href={`/posteingang/schreiben?angebot=${a.id}`} className="btn-hell">Per E-Mail senden</Link>}
           {offen && <form action={angebotVersendet}><input type="hidden" name="id" value={a.id} /><button className="btn">Als versendet markieren</button></form>}
           {a.status === "VERSENDET" && a.art === "ANGEBOT" && (
             <>

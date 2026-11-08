@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useFormularAktion } from "@/components/formular-aktion";
 import { benutzerAktion } from "./actions";
 
 type Firma = { id: string; name: string };
@@ -8,9 +8,9 @@ type Werte = { id: string; name: string; email: string; rolle: string; aktiv: bo
 const ROLLEN = { KOLONNE: "Kolonne (Zeiten, Material, Geräte)", BUERO: "Büro (alles außer Plankosten und Benutzer)", ADMIN: "Admin (alles)" };
 
 export function BenutzerFormular({ firmen, werte, mandantId }: { firmen: Firma[]; werte?: Werte; mandantId: string }) {
-  const [state, aktion, laeuft] = useActionState(benutzerAktion, null);
+  const { state, onSubmit, laeuft } = useFormularAktion(benutzerAktion);
   return (
-    <form action={aktion} key={!werte && state?.ok ? state.zeit : undefined} className="grid gap-3 md:grid-cols-4">
+    <form onSubmit={onSubmit} key={!werte && state?.ok ? state.zeit : undefined} className="grid gap-3 md:grid-cols-4">
       {werte && <input type="hidden" name="id" value={werte.id} />}
       <div><label className="label">Name</label><input name="name" required defaultValue={werte?.name} className="eingabe" /></div>
       <div><label className="label">E-Mail (Anmeldung)</label><input name="email" type="email" required defaultValue={werte?.email} className="eingabe" /></div>
