@@ -13,6 +13,10 @@ import {
   kopfAktion, positionNeuAktion, positionAktion, aufmassAktion, aufmassLoeschenAktion, verrechnungAktion,
   x31Aktion, festschreibenAktion, stornoAktion, entwurfLoeschenAktion, rechnungAnlegenAktion,
 } from "../actions";
+import { db } from "@/lib/db";
+import { offenerBetrag, opStatus, OP_TEXT, MAHNSTUFE, faellig as faelligAb } from "@/lib/faktura/op";
+import { zahlungAktion, zahlungLoeschenAktion } from "../zahlung-actions";
+import { berlinTag } from "@/lib/zeit";
 
 const STATUS_FARBE = { ENTWURF: "bg-slate-200 text-slate-700", FESTGESCHRIEBEN: "bg-emerald-100 text-emerald-800", STORNIERT: "bg-red-100 text-red-700" } as const;
 const zahl = (v: unknown, stellen = 2) => new Intl.NumberFormat("de-DE", { maximumFractionDigits: stellen }).format(n(v as number));
@@ -30,6 +34,11 @@ export default async function RechnungSeite({ params }: { params: Promise<{ id: 
   const gewaehlt = new Set(r.verrechnungen.map((v) => v.vorId));
   const emp = empfaengerAus(r);
   const hatAufmass = r.positionen.some((p) => p.aufmass.length > 0);
+  const [zahlungen, mahnungen] = offen ? [[], []] : await Promise.all([
+    db.zahlung.findMany({ where: { rechnungId: r.id }, orderBy: { datum: "asc" } }),
+    db.mahnung.findMany({ where: { rechnungId: r.id }, orderBy: { datum: "asc" }, select: { id: true, stufe: true, datum: true } }),
+  ]);
+  const opOffen = offenerBetrag(r, zahlungen), opStand = opStatus(r, zahlungen);
 
   return (
     <div className="space-y-4">
@@ -101,6 +110,34 @@ export default async function RechnungSeite({ params }: { params: Promise<{ id: 
           </div>
         </section>
       ) : null}
+
+      {/* Zahlungen */}
+      {!offen && r.art !== "STORNO" && (
+        <section className="karte space-y-2 text-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="font-semibold">Zahlungen</h2>
+            <span className={opStand === "ueberfaellig" ? "text-red-700" : "text-slate-600"}>{OP_TEXT[opStand]} · offen {euro(opOffen)} · fällig {datum(faelligAb(r))}</span>
+            <Link href="/rechnungen/offene-posten" className="ml-auto text-marke">Offene Posten</Link>
+          </div>
+          {zahlungen.map((z) => (
+            <div key={z.id} className="flex flex-wrap items-center gap-3">
+              <span className="w-24 text-slate-500">{datum(z.datum)}</span><span className="w-28">{euro(z.betrag)}</span>
+              <span className="text-slate-500">{({ UEBERWEISUNG: "Überweisung", LASTSCHRIFT: "Lastschrift", BAR: "bar", SKONTO: "Skonto", AUSBUCHUNG: "ausgebucht" } as const)[z.art]}{z.notiz ? ` · ${z.notiz}` : ""}</span>
+              <form action={zahlungLoeschenAktion} className="ml-auto"><input type="hidden" name="zahlungId" value={z.id} /><input type="hidden" name="rechnungId" value={r.id} /><button className="text-xs text-red-600">löschen</button></form>
+            </div>
+          ))}
+          {opOffen > 0 && (
+            <AktionsFormular aktion={zahlungAktion} knopf="Zahlung buchen" knopfKlasse="btn-hell" zuruecksetzen className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <input type="hidden" name="rechnungId" value={r.id} />
+              <input type="date" name="datum" defaultValue={berlinTag(new Date())} className="eingabe" aria-label="Datum" />
+              <input name="betrag" defaultValue={opOffen.toFixed(2).replace(".", ",")} className="eingabe" aria-label="Betrag" />
+              <select name="art" className="eingabe" aria-label="Art"><option value="UEBERWEISUNG">Überweisung</option><option value="LASTSCHRIFT">Lastschrift</option><option value="BAR">bar</option><option value="SKONTO">Skonto</option><option value="AUSBUCHUNG">ausbuchen</option></select>
+              <input name="notiz" placeholder="Notiz" className="eingabe" aria-label="Notiz" />
+            </AktionsFormular>
+          )}
+          {mahnungen.length > 0 && <div className="text-xs">Mahnungen: {mahnungen.map((m) => <a key={m.id} href={`/rechnungen/mahnung/${m.id}`} target="_blank" className="mr-3 text-marke">{MAHNSTUFE[m.stufe]} vom {datum(m.datum)}</a>)}</div>}
+        </section>
+      )}
 
       {/* Kopf */}
       <details className="karte" open={offen}>

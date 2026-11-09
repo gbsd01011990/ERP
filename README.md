@@ -97,7 +97,17 @@ Rechnungen (je Mandant eigener Nummernkreis, eigenes Design):
   eine schon verrechnete Abschlagsrechnung lässt sich erst nach der späteren Rechnung stornieren.
 - Nummernkreise frei einstellbar (Einstellungen → Nummernkreise): Präfix mit `{JJJJ}`/`{JJ}`, nächste
   Nummer, Stellen, jährlich neu. GBSD startet bei 2026-114. Belegte Nummern werden abgelehnt.
-- Noch nicht: ZUGFeRD/XRechnung, GAEB X89, Zahlungseingänge und offene Posten, DATEV-Export.
+- **Offene Posten**: Zahlungen buchen (Überweisung, Lastschrift, bar, Skonto, Ausbuchung), Status offen,
+  teilweise bezahlt, überfällig; Einbehalte im Blick. Stornierte Rechnungen sind nur bei schon gezahltem Geld offen (Erstattung).
+- **Kontoauszug** im Format CAMT.053 einlesen (`bank/camt.py`, nur Python-Standardbibliothek): doppelte Umsätze
+  werden erkannt, Eingänge über Rechnungsnummer und Betrag zugeordnet, Skonto innerhalb der Frist erkannt.
+- **Mahnwesen**: Zahlungserinnerung (kostenlos), 1. und 2. Mahnung als PDF im CD; Gebühren, Frist und
+  Basiszinssatz unter Einstellungen → Buchhaltung; Verzugszinsen nach § 288 BGB ab der Erinnerung,
+  Verzugspauschale 40 € nur gegenüber Unternehmern.
+- **DATEV-Export** für die Kanzlei: ZIP mit Buchungsstapel (EXTF 700, SKR03; Rechnungen an Debitor gegen
+  Erlöskonto, Zahlungen Bank/Kasse/Skonto an Debitor), Debitorenliste und Rechnungs-PDFs. Debitorennummern ab 10000
+  je Firma, beim ersten Export vergeben. Den ersten Stapel bitte von der Kanzlei probeweise einlesen lassen.
+- Noch nicht: ZUGFeRD/XRechnung, GAEB X89, Eingangsrechnungen.
 
 Telefonagent (je Firma eigener Agent; Einrichtung: [deploy/TELEFONAGENT.md](deploy/TELEFONAGENT.md)):
 

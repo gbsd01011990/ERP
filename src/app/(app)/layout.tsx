@@ -22,6 +22,7 @@ const NAV = [
   { href: "/einstellungen/benutzer", text: "Benutzer", nurAdmin: true },
   { href: "/einstellungen/postfaecher", text: "Postfächer", nurAdmin: true },
   { href: "/einstellungen/nummernkreise", text: "Nummernkreise", nurAdmin: true },
+  { href: "/einstellungen/buchhaltung", text: "Buchhaltung", nurAdmin: true },
   { href: "/einstellungen/telefonagent", text: "Telefonagent", nurAdmin: true },
   { href: "/einstellungen/messenger", text: "Messenger", nurAdmin: true },
   { href: "/einstellungen/api", text: "API", buero: true },

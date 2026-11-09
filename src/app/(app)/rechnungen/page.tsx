@@ -4,6 +4,7 @@ import { benutzerPflicht } from "@/lib/auth";
 import { firmenFilter } from "@/lib/firma";
 import { datum, euro, kontaktName } from "@/lib/format";
 import { ART_TITEL, STATUS_TEXT } from "@/lib/faktura/texte";
+import { RechnungenNav } from "@/components/rechnungen-nav";
 
 const FILTER = { ENTWURF: "Entwürfe", FESTGESCHRIEBEN: "Festgeschrieben", STORNIERT: "Storniert" } as const;
 
@@ -25,6 +26,7 @@ export default async function Rechnungen({ searchParams }: { searchParams: Promi
         <h1 className="h1">Rechnungen</h1>
         <span className="text-sm text-slate-500">Neue Rechnungen legst du im Projekt an.</span>
       </div>
+      <RechnungenNav aktiv="/rechnungen" />
       <div className="flex flex-wrap gap-2 text-sm">
         <Link href="/rechnungen" className={!status ? "btn" : "btn-hell"}>Alle</Link>
         {Object.entries(FILTER).map(([k, v]) => <Link key={k} href={`/rechnungen?status=${k}`} className={status === k ? "btn" : "btn-hell"}>{v}</Link>)}

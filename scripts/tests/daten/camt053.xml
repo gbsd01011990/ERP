@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+ <BkToCstmrStmt>
+  <GrpHdr><MsgId>TEST1</MsgId><CreDtTm>2026-11-09T08:00:00</CreDtTm></GrpHdr>
+  <Stmt>
+   <Id>1</Id>
+   <Acct><Id><IBAN>DE89370400440532013000</IBAN></Id></Acct>
+   <Ntry>
+    <Amt Ccy="EUR">1166.20</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts>
+    <BookgDt><Dt>2026-11-06</Dt></BookgDt><ValDt><Dt>2026-11-06</Dt></ValDt>
+    <AcctSvcrRef>REF-001</AcctSvcrRef>
+    <NtryDtls><TxDtls>
+     <Refs><EndToEndId>NOTPROVIDED</EndToEndId></Refs>
+     <RltdPties><Dbtr><Pty><Nm>Erika Musterfrau</Nm></Pty></Dbtr><DbtrAcct><Id><IBAN>DE02120300000000202051</IBAN></Id></DbtrAcct></RltdPties>
+     <RmtInf><Ustrd>RE 2026-114 Hecke</Ustrd></RmtInf>
+    </TxDtls></NtryDtls>
+   </Ntry>
+   <Ntry>
+    <Amt Ccy="EUR">89.99</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts>
+    <BookgDt><Dt>2026-11-07</Dt></BookgDt>
+    <AcctSvcrRef>REF-002</AcctSvcrRef>
+    <NtryDtls><TxDtls>
+     <RltdPties><Cdtr><Pty><Nm>Baumarkt GmbH</Nm></Pty></Cdtr></RltdPties>
+     <RmtInf><Ustrd>Kd 4711</Ustrd></RmtInf>
+    </TxDtls></NtryDtls>
+   </Ntry>
+   <Ntry>
+    <Amt Ccy="EUR">500.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts>
+    <BookgDt><Dt>2026-11-08</Dt></BookgDt>
+    <AcctSvcrRef>REF-003</AcctSvcrRef>
+    <NtryDtls>
+     <TxDtls><AmtDtls><TxAmt><Amt Ccy="EUR">200.00</Amt></TxAmt></AmtDtls><RltdPties><Dbtr><Nm>Sommer</Nm></Dbtr></RltdPties><RmtInf><Ustrd>Teil 1</Ustrd></RmtInf></TxDtls>
+     <TxDtls><AmtDtls><TxAmt><Amt Ccy="EUR">300.00</Amt></TxAmt></AmtDtls><RltdPties><Dbtr><Nm>Winter</Nm></Dbtr></RltdPties><RmtInf><Ustrd>Teil 2</Ustrd></RmtInf></TxDtls>
+    </NtryDtls>
+   </Ntry>
+   <Ntry>
+    <Amt Ccy="EUR">10.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>PDNG</Cd></Sts>
+    <BookgDt><Dt>2026-11-09</Dt></BookgDt>
+   </Ntry>
+  </Stmt>
+ </BkToCstmrStmt>
+</Document>

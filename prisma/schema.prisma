@@ -98,6 +98,10 @@ model Firma {
   gespraeche    Gespraech[]
   termine       Termin[]
   kanalZugaenge KanalZugang[]
+  buchhaltung   Json? // DATEV-Nummern, Konten (SKR03), Mahnregeln
+  zahlungen     Zahlung[]
+  bankumsaetze  Bankumsatz[]
+  mahnungen     Mahnung[]
 }
 
 model Benutzer {
@@ -130,6 +134,8 @@ model Benutzer {
   termine                   Termin[]
   gespraecheZustaendig      Gespraech[]
   agentStandard             TelefonAgent[]
+  zahlungenErfasst          Zahlung[]
+  mahnungenErstellt         Mahnung[]
 }
 
 model Zugriff {
@@ -966,6 +972,9 @@ model Rechnung {
   verrechnungen      Verrechnung[]       @relation("Verrechnet")
   verrechnetIn       Verrechnung[]       @relation("Vorrechnung")
 
+  zahlungen Zahlung[]
+  mahnungen Mahnung[]
+
   @@unique([firmaId, nummer])
   @@index([projektId])
   @@index([angebotId])
@@ -1167,4 +1176,74 @@ model KanalZugang {
   firma       Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
 
   @@unique([firmaId, kanal])
+}
+
+// ---------------------------------------------------------------- Zahlungen und Mahnwesen
+
+enum ZahlungsArt {
+  UEBERWEISUNG
+  LASTSCHRIFT
+  BAR
+  SKONTO // gewährter Skontoabzug
+  AUSBUCHUNG // Forderungsverlust oder Kleinbetrag
+}
+
+model Zahlung {
+  id           String      @id @default(cuid())
+  firmaId      String
+  rechnungId   String
+  datum        DateTime
+  betrag       Decimal     @db.Decimal(12, 2)
+  art          ZahlungsArt @default(UEBERWEISUNG)
+  notiz        String?
+  bankumsatzId String?
+  erfasstVonId String?
+  createdAt    DateTime    @default(now())
+  firma        Firma       @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  rechnung     Rechnung    @relation(fields: [rechnungId], references: [id])
+  bankumsatz   Bankumsatz? @relation(fields: [bankumsatzId], references: [id], onDelete: SetNull)
+  erfasstVon   Benutzer?   @relation(fields: [erfasstVonId], references: [id], onDelete: SetNull)
+
+  @@index([rechnungId])
+  @@index([firmaId, datum])
+}
+
+/// Umsatz aus dem Kontoauszug (CAMT.053). `referenz` verhindert doppelten Import.
+model Bankumsatz {
+  id               String    @id @default(cuid())
+  firmaId          String
+  referenz         String
+  buchungstag      DateTime
+  betrag           Decimal   @db.Decimal(12, 2) // Eingang positiv, Ausgang negativ
+  name             String?
+  iban             String?
+  verwendungszweck String?
+  quelle           String?
+  erledigt         Boolean   @default(false) // zugeordnet oder bewusst übergangen
+  createdAt        DateTime  @default(now())
+  firma            Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  zahlungen        Zahlung[]
+
+  @@unique([firmaId, referenz])
+  @@index([firmaId, erledigt, buchungstag])
+}
+
+model Mahnung {
+  id            String    @id @default(cuid())
+  firmaId       String
+  rechnungId    String
+  stufe         Int // 1 Zahlungserinnerung, 2 erste Mahnung, 3 letzte Mahnung
+  datum         DateTime  @default(now())
+  frist         DateTime
+  offen         Decimal   @db.Decimal(12, 2)
+  gebuehr       Decimal   @default(0) @db.Decimal(12, 2)
+  zinsen        Decimal   @default(0) @db.Decimal(12, 2)
+  pauschale     Decimal   @default(0) @db.Decimal(12, 2) // § 288 Abs. 5 BGB
+  pdf           Bytes?
+  erstelltVonId String?
+  firma         Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  rechnung      Rechnung  @relation(fields: [rechnungId], references: [id])
+  erstelltVon   Benutzer? @relation(fields: [erstelltVonId], references: [id], onDelete: SetNull)
+
+  @@index([rechnungId])
 }

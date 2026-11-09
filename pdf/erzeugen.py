@@ -34,7 +34,7 @@ def gbsd(d, ziel):
     sys.path.insert(0, os.path.join(HIER, "gbsd"))
     from gbsd_dokument import GBSDDokument, SPALTEN_PREISE, SPALTEN_MENGEN
 
-    infos = [(f"{d['dokumentart']} Nr.:", d["belegnummer"], True), ("Datum:", d["datum"])]
+    infos = [(d.get("belegLabel") or f"{d['dokumentart']} Nr.:", d["belegnummer"], True), ("Datum:", d["datum"])]
     if d.get("kundennummer"):
         infos.append(("Kunden-Nr.:", d["kundennummer"]))
     if d.get("gueltigBis"):
@@ -119,7 +119,8 @@ def _rechnung_rd_kud(doc, mod, d, luecke=17.0):
     """Abzüge, Einbehalt und Zahlbetrag unter der Zusammenstellung; danach Hinweise und Zahlungstext."""
     re_ = d["rechnung"]
     c = doc.c
-    weitere = re_["abrechnung"][3:]  # Netto, Steuer und Summe zeigt die Zusammenstellung
+    # Netto, Steuer und Summe zeigt die Zusammenstellung; Mahnungen geben ihre Zeilen ausdrücklich vor
+    weitere = re_["weitere"] if "weitere" in re_ else re_["abrechnung"][3:]
     if weitere:
         doc.y -= luecke
         for i, z in enumerate(weitere):
