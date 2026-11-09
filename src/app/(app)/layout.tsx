@@ -8,7 +8,7 @@ const NAV = [
   { href: "/", text: "Übersicht" },
   { href: "/posteingang", text: "Posteingang" },
   { href: "/aufgaben", text: "Aufgaben" },
-  { href: "/anrufe", text: "Anrufe", buero: true },
+  { href: "/anrufe", text: "Kommunikation", buero: true },
   { href: "/termine", text: "Termine", buero: true },
   { href: "/zeiten", text: "Zeiten" },
   { href: "/projekte", text: "Projekte" },
@@ -23,6 +23,7 @@ const NAV = [
   { href: "/einstellungen/postfaecher", text: "Postfächer", nurAdmin: true },
   { href: "/einstellungen/nummernkreise", text: "Nummernkreise", nurAdmin: true },
   { href: "/einstellungen/telefonagent", text: "Telefonagent", nurAdmin: true },
+  { href: "/einstellungen/messenger", text: "Messenger", nurAdmin: true },
   { href: "/einstellungen/api", text: "API", buero: true },
 ];
 

@@ -97,6 +97,7 @@ model Firma {
   telefonAgent  TelefonAgent?
   gespraeche    Gespraech[]
   termine       Termin[]
+  kanalZugaenge KanalZugang[]
 }
 
 model Benutzer {
@@ -1109,11 +1110,14 @@ model Gespraech {
 model GespraechNachricht {
   id          String    @id @default(cuid())
   gespraechId String
+  externId    String? // Nachrichten-ID des Messengers (gegen doppelte Zustellung)
+  benutzerId  String? // wer im Büro geantwortet hat
   von         String // KUNDE, AGENT, MITARBEITER, WERKZEUG
   text        String
   zeit        DateTime  @default(now())
   gespraech   Gespraech @relation(fields: [gespraechId], references: [id], onDelete: Cascade)
 
+  @@index([gespraechId, externId])
   @@index([gespraechId, zeit])
 }
 
@@ -1148,4 +1152,19 @@ model Termin {
   gespraech    Gespraech? @relation(fields: [gespraechId], references: [id], onDelete: SetNull)
 
   @@index([firmaId, beginn])
+}
+
+/// Zugang zu einem Messenger je Firma. Geheimnisse (Tokens) liegen verschlüsselt in `geheim`.
+model KanalZugang {
+  id          String   @id @default(cuid())
+  firmaId     String
+  kanal       Kanal
+  aktiv       Boolean  @default(false)
+  kennung     String? // Telegram: Bot-Name; WhatsApp: Phone-Number-ID; SMS: Absendernummer
+  geheim      String? // verschlüsseltes JSON mit Tokens
+  abwesenheit String? // automatische Antwort außerhalb der Bürozeiten
+  updatedAt   DateTime @updatedAt
+  firma       Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+
+  @@unique([firmaId, kanal])
 }

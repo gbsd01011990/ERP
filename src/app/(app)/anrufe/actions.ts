@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { benutzerPflicht } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { FachFehler } from "@/lib/dienste/fehler";
+import { antworten } from "@/lib/dienste/kanaele";
 
 type Ergebnis = { fehler?: string; ok?: string; zeit: number } | null;
 
@@ -33,6 +34,19 @@ export async function zuordnenAktion(_: unknown, f: FormData): Promise<Ergebnis>
     return { ok: `Zugeordnet zu ${p.nummer} ${p.titel}.`, zeit: Date.now() };
   } catch (e) {
     if (e instanceof FachFehler) return { fehler: e.message, zeit: Date.now() };
+    throw e;
+  }
+}
+
+export async function antwortAktion(_: unknown, f: FormData): Promise<Ergebnis> {
+  const { b, g } = await laden(String(f.get("id")));
+  try {
+    await antworten(b, g.id, String(f.get("text") ?? ""));
+    revalidatePath(`/anrufe/${g.id}`);
+    return { ok: "Gesendet.", zeit: Date.now() };
+  } catch (e) {
+    if (e instanceof FachFehler) return { fehler: e.message, zeit: Date.now() };
+    if (e instanceof Error) return { fehler: `Senden fehlgeschlagen: ${e.message}`, zeit: Date.now() };
     throw e;
   }
 }

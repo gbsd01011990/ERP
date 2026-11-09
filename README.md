@@ -109,6 +109,17 @@ Telefonagent (je Firma eigener Agent; Einrichtung: [deploy/TELEFONAGENT.md](depl
   entsteht die Aufgabe „Anruf prüfen“. **Termine** zeigt gebuchte und von Hand eingetragene Termine.
 - Werkzeuge mit Schlüssel je Firma, Webhook mit HMAC-Signatur; Testkonsole in den Einstellungen.
 
+Messenger (je Firma eigene Zugänge, Einstellungen → Messenger):
+
+- WhatsApp Business (Cloud API von Meta), Telegram-Bot und SMS über Twilio. Eingehende Nachrichten landen
+  unter **Kommunikation** (zusammen mit den Anrufen), werden über die Rufnummer dem Kunden zugeordnet und
+  lassen sich direkt beantworten. Ein Chat = ein Gespräch; eine neue Nachricht öffnet es wieder.
+- Echtheit: Telegram-Geheimnis, Meta-Signatur (App Secret), Twilio-Signatur. Doppelte Zustellungen werden erkannt.
+- Außerhalb der Bürozeiten einmal je 12 Stunden eine Abwesenheitsnotiz. WhatsApp-Antworten nur im 24-Stunden-Fenster.
+- Schlüssel liegen verschlüsselt (ERP_SCHLUESSEL) und werden nach dem Speichern nie wieder angezeigt.
+- Noch nicht: Threema Work (Gateway mit Ende-zu-Ende-Modus), Bilder und Dateien herunterladen.
+  Signal und iMessage bieten keine offene Schnittstelle für Firmen.
+
 Mandanten:
 
 - Eigene Anmeldeseite je Firma mit Logo und Farben: `/login/gbsd`, `/login/riedrich-dremel`,

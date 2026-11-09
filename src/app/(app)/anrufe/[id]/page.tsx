@@ -5,9 +5,10 @@ import { benutzerPflicht } from "@/lib/auth";
 import { datumZeit, kontaktName } from "@/lib/format";
 import { slotText } from "@/lib/agent/zeiten";
 import { AktionsFormular } from "@/components/aktions-formular";
-import { erledigtAktion, zuordnenAktion } from "../actions";
+import { erledigtAktion, zuordnenAktion, antwortAktion } from "../actions";
+import { KANAL_TEXT } from "@/lib/dienste/kanaele";
 
-const VON = { KUNDE: "Anrufer", AGENT: "Agent", MITARBEITER: "Mitarbeiter", WERKZEUG: "ERP" } as Record<string, string>;
+const VON = { KUNDE: "Kunde", AGENT: "Agent", MITARBEITER: "Mitarbeiter", WERKZEUG: "ERP" } as Record<string, string>;
 
 export default async function Gespraech({ params }: { params: Promise<{ id: string }> }) {
   const b = await benutzerPflicht(["ADMIN", "BUERO"]);
@@ -20,7 +21,7 @@ export default async function Gespraech({ params }: { params: Promise<{ id: stri
     <div className="space-y-4">
       <div className="flex flex-wrap items-start gap-3">
         <div>
-          <div className="text-sm text-slate-500"><Link href="/anrufe" className="text-marke">Anrufe</Link> · {g.kanal === "TELEFON" ? "Telefon" : g.kanal}</div>
+          <div className="text-sm text-slate-500"><Link href="/anrufe" className="text-marke">Kommunikation</Link> · {KANAL_TEXT[g.kanal]}</div>
           <h1 className="h1">{g.absenderName ?? g.absender}</h1>
           <div className="text-sm text-slate-500">{datumZeit(g.beginn)}{g.dauerSek ? ` · ${Math.round(g.dauerSek / 60)} min` : ""} · {g.absender}{g.zustaendig ? ` · zuständig ${g.zustaendig.name}` : ""}</div>
         </div>
@@ -50,11 +51,18 @@ export default async function Gespraech({ params }: { params: Promise<{ id: stri
           {g.nachrichten.map((n) => (
             <li key={n.id} className={`flex gap-3 ${n.von === "WERKZEUG" ? "text-xs text-slate-500" : ""}`}>
               <span className="w-20 shrink-0 text-slate-400">{VON[n.von] ?? n.von}</span>
-              <span className={`flex-1 whitespace-pre-line rounded px-2 py-1 ${n.von === "KUNDE" ? "bg-slate-100" : n.von === "AGENT" ? "bg-marke-hell" : ""}`}>{n.text}</span>
+              <span className={`flex-1 whitespace-pre-line rounded px-2 py-1 ${n.von === "KUNDE" ? "bg-slate-100" : n.von === "AGENT" || n.von === "MITARBEITER" ? "bg-marke-hell" : ""}`}>{n.text}</span>
+              <span className="w-24 shrink-0 text-right text-xs text-slate-400">{datumZeit(n.zeit).split(", ")[1] ?? ""}</span>
             </li>
           ))}
           {g.nachrichten.length === 0 && <li className="text-slate-500">Kein Verlauf.</li>}
         </ul>
+        {g.kanal !== "TELEFON" && (
+          <AktionsFormular aktion={antwortAktion} knopf={`Per ${KANAL_TEXT[g.kanal]} senden`} zuruecksetzen className="mt-4 grid gap-2">
+            <input type="hidden" name="id" value={g.id} />
+            <textarea name="text" rows={3} required placeholder="Antwort …" className="eingabe" aria-label="Antwort" />
+          </AktionsFormular>
+        )}
       </section>
     </div>
   );

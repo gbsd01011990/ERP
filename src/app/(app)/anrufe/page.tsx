@@ -16,8 +16,8 @@ export default async function Anrufe({ searchParams }: { searchParams: Promise<{
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <h1 className="h1">Anrufe und Nachrichten</h1>
-        <span className="text-sm text-slate-500">Vom Telefonagenten angenommen; Messenger folgen.</span>
+        <h1 className="h1">Kommunikation</h1>
+        <span className="text-sm text-slate-500">Anrufe des Telefonagenten und Nachrichten aus WhatsApp, Telegram und SMS.</span>
         <Link href={alle ? "/anrufe" : "/anrufe?alle=1"} className="btn-hell ml-auto">{alle ? "Nur offene" : "Alle zeigen"}</Link>
       </div>
       <div className="karte overflow-x-auto p-0">
