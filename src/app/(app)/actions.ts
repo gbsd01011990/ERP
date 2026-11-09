@@ -22,7 +22,7 @@ const feld = (form: FormData, k: string) => (typeof form.get(k) === "string" ? S
 
 export async function kontaktSpeichern(form: FormData) {
   const b = await benutzerPflicht(["ADMIN", "BUERO"]);
-  const felder = ["firmenname", "anrede", "vorname", "nachname", "email", "telefon", "mobil", "leitwegId", "notiz", "strasse", "plz", "ort"] as const;
+  const felder = ["firmenname", "anrede", "vorname", "nachname", "email", "telefon", "mobil", "leitwegId", "ustId", "notiz", "strasse", "plz", "ort"] as const;
   const eingabe = Object.fromEntries(felder.map((k) => [k, feld(form, k)]));
   const k = await kontaktSpeichernDienst(b, leer(form.get("id")), {
     ...eingabe,

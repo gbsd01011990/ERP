@@ -107,7 +107,13 @@ Rechnungen (je Mandant eigener Nummernkreis, eigenes Design):
 - **DATEV-Export** für die Kanzlei: ZIP mit Buchungsstapel (EXTF 700, SKR03; Rechnungen an Debitor gegen
   Erlöskonto, Zahlungen Bank/Kasse/Skonto an Debitor), Debitorenliste und Rechnungs-PDFs. Debitorennummern ab 10000
   je Firma, beim ersten Export vergeben. Den ersten Stapel bitte von der Kanzlei probeweise einlesen lassen.
-- Noch nicht: ZUGFeRD/XRechnung, GAEB X89, Eingangsrechnungen.
+- **E-Rechnung**: Beim Festschreiben bekommt jedes Rechnungs-PDF eine ZUGFeRD-Datei (CII, EN 16931) eingebettet
+  (factur-x, BSD-Lizenz). Sind alle Pflichtangaben da (u. a. E-Mail-Adresse des Kunden, bei § 13b dessen USt-IdNr.),
+  entsteht zusätzlich eine XRechnung 3.0 zum Herunterladen. Abschläge stehen als Vorauszahlung (BT-113) in der
+  Schlussrechnung; Storno und Gutschriften als Gutschrift (381); Skonto in der XRechnung-Schreibweise.
+  Jeder Push prüft neun typische Fälle mit dem amtlichen KoSIT-Validator (GitHub Actions, Job „erechnung“).
+  Verkäuferdaten je Firma in `src/lib/faktura/stammdaten.ts`.
+- Noch nicht: GAEB X89, Eingangsrechnungen, Empfang von E-Rechnungen.
 
 Telefonagent (je Firma eigener Agent; Einrichtung: [deploy/TELEFONAGENT.md](deploy/TELEFONAGENT.md)):
 

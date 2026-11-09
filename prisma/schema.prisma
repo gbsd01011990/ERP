@@ -187,6 +187,8 @@ model Kontakt {
   gespraeche Gespraech[]
   termine    Termin[]
 
+  ustId String? // für § 13b und XRechnung
+
   @@index([nachname])
   @@index([firmenname])
 }
@@ -974,6 +976,10 @@ model Rechnung {
 
   zahlungen Zahlung[]
   mahnungen Mahnung[]
+
+  xml       String? // CII EN 16931, ins PDF eingebettet (ZUGFeRD)
+  xrechnung String? // CII XRechnung 3.0
+  eHinweis  String? // warum keine (vollständige) E-Rechnung entstand
 
   @@unique([firmaId, nummer])
   @@index([projektId])

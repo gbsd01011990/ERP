@@ -46,6 +46,7 @@ export function KontaktFormular({ kontakt }: { kontakt?: Kontakt & { adressen: A
         {feld("mobil", "Mobil", kontakt?.mobil, "tel")}
         {feld("email", "E-Mail", kontakt?.email, "email")}
         {feld("leitwegId", "Leitweg-ID (E-Rechnung)", kontakt?.leitwegId)}
+        {feld("ustId", "USt-IdNr. (für § 13b und XRechnung)", kontakt?.ustId)}
         <div className="sm:col-span-2">
           <label className="label">Notiz</label>
           <textarea name="notiz" rows={3} defaultValue={kontakt?.notiz ?? ""} className="eingabe" />

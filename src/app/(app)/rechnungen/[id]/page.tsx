@@ -17,6 +17,7 @@ import { db } from "@/lib/db";
 import { offenerBetrag, opStatus, OP_TEXT, MAHNSTUFE, faellig as faelligAb } from "@/lib/faktura/op";
 import { zahlungAktion, zahlungLoeschenAktion } from "../zahlung-actions";
 import { berlinTag } from "@/lib/zeit";
+import { ciiFuer } from "@/lib/faktura/erechnung";
 
 const STATUS_FARBE = { ENTWURF: "bg-slate-200 text-slate-700", FESTGESCHRIEBEN: "bg-emerald-100 text-emerald-800", STORNIERT: "bg-red-100 text-red-700" } as const;
 const zahl = (v: unknown, stellen = 2) => new Intl.NumberFormat("de-DE", { maximumFractionDigits: stellen }).format(n(v as number));
@@ -30,6 +31,8 @@ export default async function RechnungSeite({ params }: { params: Promise<{ id: 
   const positionen = nummerieren(r.positionen);
   const titel = r.art === "ABSCHLAG" && r.abschlagNr ? `${r.abschlagNr}. ${ART_TITEL.ABSCHLAG}` : ART_TITEL[r.art];
   const maengel = offen ? pruefen(r, be) : [];
+  let xrMaengel: string[] = [];
+  try { xrMaengel = offen ? ciiFuer(r, "XRECHNUNG").maengel : []; } catch { xrMaengel = []; }
   const kandidaten = ["ABSCHLAG", "TEILSCHLUSS", "SCHLUSS"].includes(r.art) && offen ? await verrechenbare(r) : [];
   const gewaehlt = new Set(r.verrechnungen.map((v) => v.vorId));
   const emp = empfaengerAus(r);
@@ -60,6 +63,7 @@ export default async function RechnungSeite({ params }: { params: Promise<{ id: 
         <div className="ml-auto flex flex-wrap gap-2">
           <a href={`/rechnungen/${r.id}/pdf`} target="_blank" className="btn-hell">{offen ? "PDF-Vorschau" : "PDF"}</a>
           {hatAufmass && <a href={`/rechnungen/${r.id}/pdf?mengennachweis=1`} target="_blank" className="btn-hell">Mengennachweis</a>}
+          {r.xrechnung && <a href={`/rechnungen/${r.id}/xrechnung`} className="btn-hell">XRechnung (XML)</a>}
           {offen && <form action={entwurfLoeschenAktion}><input type="hidden" name="id" value={r.id} /><button className="btn-hell text-red-600">Entwurf löschen</button></form>}
         </div>
       </div>
@@ -85,6 +89,10 @@ export default async function RechnungSeite({ params }: { params: Promise<{ id: 
           ) : (
             <p className="text-slate-600">Die Prüfliste ist erfüllt. Beim Festschreiben vergibt der Nummernkreis die nächste Rechnungsnummer, Beträge und Anschrift werden eingefroren und das PDF gespeichert. Danach lässt sich die Rechnung nur noch stornieren oder berichtigen.</p>
           )}
+          <p className="text-xs text-slate-500">
+            E-Rechnung: Das PDF bekommt eine ZUGFeRD-Datei (EN 16931) eingebettet.{" "}
+            {xrMaengel.length ? `Für eine XRechnung fehlt noch: ${xrMaengel.join(", ")}. Für Privatkunden ist das egal.` : "Eine XRechnung 3.0 entsteht zusätzlich."}
+          </p>
           <AktionsFormular aktion={festschreibenAktion} knopf="Festschreiben und Nummer vergeben">
             <input type="hidden" name="id" value={r.id} />
           </AktionsFormular>
@@ -110,6 +118,12 @@ export default async function RechnungSeite({ params }: { params: Promise<{ id: 
           </div>
         </section>
       ) : null}
+
+      {!offen && (r.eHinweis || r.xml) && (
+        <p className={`text-xs ${r.eHinweis ? "text-amber-800" : "text-slate-500"}`}>
+          {r.xml ? "ZUGFeRD (EN 16931) ist ins PDF eingebettet. " : ""}{r.eHinweis}
+        </p>
+      )}
 
       {/* Zahlungen */}
       {!offen && r.art !== "STORNO" && (

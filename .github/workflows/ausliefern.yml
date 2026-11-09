@@ -31,8 +31,53 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm test
 
+  # E-Rechnung: typische Rechnungsfälle als XRechnung erzeugen und mit dem amtlichen
+  # KoSIT-Validator (XRechnung 3.0) prüfen. Läuft nur hier, nicht auf dem Server.
+  erechnung:
+    runs-on: ubuntu-24.04
+    env:
+      VALIDATOR: v1.6.3
+      KONFIGURATION: v2026-08-31
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npx tsx scripts/erechnung-beispiele.ts xr XRECHNUNG
+      - name: KoSIT-Validator und XRechnung-Konfiguration laden
+        run: |
+          gh release download "$VALIDATOR" -R itplr-kosit/validator -p "validator-*.zip" -D dl
+          gh release download "$KONFIGURATION" -R itplr-kosit/validator-configuration-xrechnung -p "*.zip" -D dl
+          unzip -q dl/validator-*.zip -d val
+          unzip -q "$(ls dl/*.zip | grep -v '/validator-[0-9]')" -d konf
+      - name: Prüfen
+        run: |
+          java -cp "$(ls val/validator-*.jar):val/libs/*" de.kosit.validationtool.cmd.CommandLineApplication \
+            -s konf/scenarios.xml -r konf -o berichte -h xr/*.xml || true
+          fehler=0
+          for f in xr/*.xml; do
+            b="berichte/$(basename "$f" .xml)-report.xml"
+            if [ -f "$b" ] && grep -q "<rep:accept" "$b"; then echo "gültig:   $(basename "$f")"
+            else echo "::error::XRechnung ungültig: $(basename "$f")"; [ -f "$b" ] && grep -o 'id="[A-Z-]*[0-9a-z-]*"[^>]*level="error"' "$b" | head -20; fehler=1; fi
+          done
+          exit $fehler
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xrechnung-pruefberichte
+          path: |
+            xr
+            berichte
+
   ausliefern:
-    needs: pruefen
+    needs: [pruefen, erechnung]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     env:

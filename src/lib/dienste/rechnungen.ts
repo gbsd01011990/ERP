@@ -14,7 +14,7 @@ import type { AktuellerBenutzer } from "../auth";
 import { naechsteNummer } from "../nummern";
 import { n, runden, einzelpreisAnteile, wirksamerEp, nummerieren } from "../kalkulation";
 import { briefanrede, empfaengerZeilen } from "../vorlagen";
-import { datum as datumText } from "../format";
+import { datum as datumText, kontaktName } from "../format";
 import { gaebLesen, ozSchluessel } from "../gaeb";
 import {
   rechnungBerechnen, aufmassMenge, aufmassZeileWert, kostenartAusKalkulation, beguenstigtJeEinheit,
@@ -383,13 +383,23 @@ export async function entwurfLoeschen(b: AktuellerBenutzer, id: string) {
 
 // ------------------------------------------------------------------ Festschreiben
 
-export type Empfaenger = { zeilen: string[]; kundennummer: string; verbraucher: boolean };
+export type Empfaenger = {
+  zeilen: string[]; kundennummer: string; verbraucher: boolean;
+  // strukturiert für die E-Rechnung (ab Einführung der E-Rechnung im Abbild enthalten)
+  name?: string; strasse?: string | null; plz?: string | null; ort?: string | null; land?: string;
+  email?: string | null; ustId?: string | null; kontaktperson?: string | null;
+};
 
 export function empfaengerAus(r: GeladeneRechnung): Empfaenger {
   if (r.status !== "ENTWURF" && r.empfaenger) return r.empfaenger as Empfaenger;
   const k = r.projekt.kontakt;
   const a = k.adressen.find((x) => x.art === "RECHNUNG") ?? k.adressen.find((x) => x.art === "HAUPT") ?? k.adressen[0];
-  return { zeilen: empfaengerZeilen(r.firma.kuerzel, k, a ?? undefined), kundennummer: k.nummer ?? "", verbraucher: k.kategorie === "PRIVAT" };
+  const person = [k.vorname, k.nachname].filter(Boolean).join(" ");
+  return {
+    zeilen: empfaengerZeilen(r.firma.kuerzel, k, a ?? undefined), kundennummer: k.nummer ?? "", verbraucher: k.kategorie === "PRIVAT",
+    name: k.firmenname ?? (person || kontaktName(k)), strasse: a?.strasse ?? null, plz: a?.plz ?? null, ort: a?.ort ?? null, land: a?.land ?? "DE",
+    email: k.email ?? null, ustId: k.ustId ?? null, kontaktperson: k.firmenname && person ? person : null,
+  };
 }
 
 /** Prüfliste vor dem Festschreiben (§ 14 UStG, Plausibilität). Leere Liste = alles in Ordnung. */
@@ -406,8 +416,9 @@ export function pruefen(r: GeladeneRechnung, be: Berechnung) {
   return m;
 }
 
-/** Erzeugt das PDF (Funktion wird von außen gereicht, damit dieser Dienst ohne Python testbar bleibt). */
-export type PdfBauer = (r: GeladeneRechnung) => Promise<Buffer>;
+/** Erzeugt PDF und E-Rechnung (wird von außen gereicht, damit dieser Dienst ohne Python testbar bleibt). */
+export type Beleg = { pdf: Buffer; xml: string | null; xrechnung: string | null; hinweis: string | null };
+export type PdfBauer = (r: GeladeneRechnung) => Promise<Beleg>;
 
 export async function festschreiben(b: AktuellerBenutzer, id: string, pdfBauen: PdfBauer) {
   const r = await entwurf(b, id);
@@ -437,8 +448,8 @@ export async function festschreiben(b: AktuellerBenutzer, id: string, pdfBauen: 
       },
     });
     const fertig = (await tx.rechnung.findUniqueOrThrow({ where: { id: r.id }, include: rechnungInclude, omit: ohnePdf })) as GeladeneRechnung;
-    const pdf = await pdfBauen(fertig);
-    await tx.rechnung.update({ where: { id: r.id }, data: { pdf: new Uint8Array(pdf) } });
+    const beleg = await pdfBauen(fertig);
+    await tx.rechnung.update({ where: { id: r.id }, data: { pdf: new Uint8Array(beleg.pdf), xml: beleg.xml, xrechnung: beleg.xrechnung, eHinweis: beleg.hinweis } });
     await tx.logbuchEintrag.create({ data: { projektId: r.projektId, benutzerId: b.id, art: "SYSTEM", text: `${ART_TITEL[r.art]} ${nummer} festgeschrieben (${eurText(be.brutto)} brutto)` } });
     return { nummer };
   }, { timeout: 60_000 });
@@ -492,7 +503,8 @@ export async function stornieren(b: AktuellerBenutzer, id: string, pdfBauen: Pdf
     });
     await tx.rechnung.update({ where: { id: r.id }, data: { status: "STORNIERT" } });
     const fertig = (await tx.rechnung.findUniqueOrThrow({ where: { id: s.id }, include: rechnungInclude, omit: ohnePdf })) as GeladeneRechnung;
-    await tx.rechnung.update({ where: { id: s.id }, data: { pdf: new Uint8Array(await pdfBauen(fertig)) } });
+    const beleg = await pdfBauen(fertig);
+    await tx.rechnung.update({ where: { id: s.id }, data: { pdf: new Uint8Array(beleg.pdf), xml: beleg.xml, xrechnung: beleg.xrechnung, eHinweis: beleg.hinweis } });
     await tx.logbuchEintrag.create({ data: { projektId: r.projektId, benutzerId: b.id, art: "SYSTEM", text: `Rechnung ${r.nummer} storniert durch ${nummer}` } });
     return s;
   }, { timeout: 60_000 });

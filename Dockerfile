@@ -9,7 +9,8 @@ COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
  && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
- && pip install --no-cache-dir reportlab==5.0.1 pyGAEB==1.21.0
+ && pip install --no-cache-dir reportlab==5.0.1 pyGAEB==1.21.0 \
+    factur-x==7.9 pypdf==6.17.0 lxml==6.1.3 iso4217==1.16.20260101 python-stdnum==2.2 requests==2.34.2
 WORKDIR /app
 
 FROM basis AS build

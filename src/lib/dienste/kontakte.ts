@@ -17,6 +17,7 @@ export const KontaktEingabe = z.object({
   telefon: z.string().nullish(),
   mobil: z.string().nullish(),
   leitwegId: z.string().nullish(),
+  ustId: z.string().nullish(),
   notiz: z.string().nullish(),
   strasse: z.string().nullish(),
   plz: z.string().nullish(),
@@ -31,7 +32,7 @@ export async function kontaktSpeichern(b: AktuellerBenutzer, id: string | null, 
   const daten = {
     typ: e.typ, kategorie: e.kategorie,
     firmenname: leer(e.firmenname), anrede: leer(e.anrede), vorname: leer(e.vorname), nachname: leer(e.nachname),
-    email: leer(e.email), telefon: leer(e.telefon), mobil: leer(e.mobil), leitwegId: leer(e.leitwegId), notiz: leer(e.notiz),
+    email: leer(e.email), telefon: leer(e.telefon), mobil: leer(e.mobil), leitwegId: leer(e.leitwegId), ustId: leer(e.ustId)?.replace(/\s/g, "").toUpperCase() ?? null, notiz: leer(e.notiz),
   };
   if (!daten.firmenname && !daten.nachname) throw new FachFehler("Firmenname oder Nachname angeben.");
   const adresse = { strasse: leer(e.strasse), plz: leer(e.plz), ort: leer(e.ort) };

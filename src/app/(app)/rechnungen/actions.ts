@@ -7,7 +7,7 @@ import { FachFehler } from "@/lib/dienste/fehler";
 import { GaebFehler } from "@/lib/gaeb";
 import { text, zahl, zahlOderNull } from "@/lib/formular";
 import * as dienst from "@/lib/dienste/rechnungen";
-import { rechnungPdf } from "@/lib/faktura/pdf";
+import { belegBauen } from "@/lib/faktura/erechnung";
 
 type Ergebnis = { fehler?: string; ok?: string; zeit: number } | null;
 
@@ -129,7 +129,7 @@ export async function x31Aktion(_: unknown, f: FormData): Promise<Ergebnis> {
 export async function festschreibenAktion(_: unknown, f: FormData): Promise<Ergebnis> {
   const b = await buero();
   return melden(async () => {
-    const r = await dienst.festschreiben(b, id(f), rechnungPdf);
+    const r = await dienst.festschreiben(b, id(f), belegBauen);
     revalidatePath("/rechnungen");
     return `Festgeschrieben als ${r.nummer}.`;
   }, `/rechnungen/${id(f)}`);
@@ -140,7 +140,7 @@ export async function stornoAktion(_: unknown, f: FormData): Promise<Ergebnis> {
   let ziel = "";
   const e = await melden(async () => {
     if (!an(f, "bestaetigt")) throw new FachFehler("Bitte das Storno bestätigen.");
-    const s = await dienst.stornieren(b, id(f), rechnungPdf);
+    const s = await dienst.stornieren(b, id(f), belegBauen);
     ziel = `/rechnungen/${s.id}`;
   });
   if (e?.fehler) return e;

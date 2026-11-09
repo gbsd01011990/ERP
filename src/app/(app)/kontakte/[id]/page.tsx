@@ -61,6 +61,7 @@ export default async function KontaktSeite({ params }: { params: Promise<{ id: s
           {k.mobil && <div>Mobil <a href={`tel:${k.mobil}`}>{k.mobil}</a></div>}
           {k.email && <div><a href={`mailto:${k.email}`} className="text-marke">{k.email}</a></div>}
           {k.leitwegId && <div>Leitweg-ID: {k.leitwegId}</div>}
+          {k.ustId && <div>USt-IdNr.: {k.ustId}</div>}
           {k.notiz && <p className="whitespace-pre-line pt-2 text-slate-600">{k.notiz}</p>}
         </section>
         <section className="karte space-y-2 text-sm">
