@@ -24,6 +24,7 @@ import { pruefen, type PruefEingabe, type Pruefergebnis } from "../einkauf/pruef
 import { FachFehler } from "./fehler";
 import { firmaPruefen, rollePruefen } from "./zugriff";
 import { buchen } from "./lager";
+import { lieferscheinAnlegen, dateiTyp, type Datei } from "./lieferscheine";
 
 const leer = (s: string | null | undefined) => (s == null || s.trim() === "" ? null : s.trim());
 const tag = (s: string) => berlinZuUtc(s, "12:00");
@@ -35,7 +36,7 @@ export const bestellungInclude = {
   projekt: { select: { id: true, nummer: true, titel: true, baustelleStrasse: true, baustellePlz: true, baustelleOrt: true } },
   lager: true,
   positionen: { orderBy: { reihenfolge: "asc" as const }, include: { artikel: { select: { id: true, nummer: true, bezeichnung: true } } } },
-  wareneingaenge: { orderBy: { datum: "asc" as const }, include: { positionen: true, benutzer: { select: { name: true } } } },
+  wareneingaenge: { orderBy: { datum: "asc" as const }, include: { positionen: true, benutzer: { select: { name: true } }, lieferscheine: { select: { id: true } } } },
   rechnungen: { select: { id: true, rechnungsnummer: true, status: true, brutto: true, datum: true } },
   erstelltVon: { select: { name: true } },
   bestelltVon: { select: { name: true } },
@@ -224,7 +225,7 @@ export const WareneingangEingabe = z.object({
  * Wareneingang buchen. Artikel mit Lager gehen als Zugang mit dem Bestellpreis ins Lager;
  * alles andere gilt als direkt auf die Baustelle geliefert.
  */
-export async function wareneingangBuchen(b: AktuellerBenutzer, id: string, eingabe: z.input<typeof WareneingangEingabe>) {
+export async function wareneingangBuchen(b: AktuellerBenutzer, id: string, eingabe: z.input<typeof WareneingangEingabe>, dateien: Datei[] = []) {
   rollePruefen(b, ["ADMIN", "BUERO", "KOLONNE"]);
   const x = await bestellungLaden(b, id);
   if (!["BESTELLT", "TEILGELIEFERT", "GELIEFERT"].includes(x.status)) throw new FachFehler("Wareneingang nur für ausgelöste Bestellungen.");
@@ -234,6 +235,11 @@ export async function wareneingangBuchen(b: AktuellerBenutzer, id: string, einga
   for (const p of zeilen) {
     const rest = n(p.menge) - n(p.geliefert);
     if (e.mengen[p.id] > rest * 1.1 + 1e-6) throw new FachFehler(`„${p.text}“: ${e.mengen[p.id]} geliefert, offen sind nur ${rest}. Mehrlieferungen über 10 % bitte mit dem Lieferanten klären.`);
+  }
+  // Fotos vor jeder Buchung prüfen, damit kein halber Wareneingang entsteht
+  for (const d of dateien) {
+    if (!dateiTyp(d.daten)) throw new FachFehler(`${d.name}: nur Fotos (JPEG, PNG, WebP, HEIC) oder PDF.`);
+    if (d.daten.length > 15 * 1024 * 1024) throw new FachFehler(`${d.name} ist größer als 15 MB.`);
   }
   // Lagerzugänge zuerst (eigene Transaktionen); dann Wareneingang mit Verweis
   const buchungen = new Map<string, string>();
@@ -247,12 +253,17 @@ export async function wareneingangBuchen(b: AktuellerBenutzer, id: string, einga
     }
   }
   await db.$transaction(async (tx) => {
-    await tx.wareneingang.create({
+    const w = await tx.wareneingang.create({
       data: {
         bestellungId: x.id, datum: tag(e.datum), lieferschein: leer(e.lieferschein), notiz: leer(e.notiz), benutzerId: b.id,
         positionen: { create: zeilen.map((p) => ({ bestellPositionId: p.id, menge: e.mengen[p.id], lagerBuchungId: buchungen.get(p.id) ?? null })) },
       },
     });
+    // Jeder Wareneingang ist ein Lieferschein (mit Foto, wenn vorhanden) – die Rechnung findet ihn darüber
+    await lieferscheinAnlegen({ firmaId: x.firmaId }, {
+      lieferantId: x.lieferantId, nummer: leer(e.lieferschein), datum: e.datum, projektId: x.projektId,
+      betrag: runden(zeilen.reduce((s, p) => s + e.mengen[p.id] * n(p.preis), 0)), notiz: leer(e.notiz) ?? `Wareneingang zu ${x.nummer}`,
+    }, dateien, "WARENEINGANG", { bestellungId: x.id, wareneingangId: w.id }, tx);
     for (const p of zeilen) await tx.bestellPosition.update({ where: { id: p.id }, data: { geliefert: { increment: e.mengen[p.id] } } });
     const neu = await tx.bestellPosition.findMany({ where: { bestellungId: x.id } });
     await tx.bestellung.update({ where: { id: x.id }, data: { status: lieferstatus(neu) } });
@@ -335,8 +346,24 @@ export async function eingangErfassen(firmaId: string, datei: { name: string; da
       positionen: { create: (g.positionen ?? []).map((p) => ({ nr: p.nr, artNr: p.artNr, text: p.text || "(ohne Text)", menge: p.menge, einheit: p.einheit, preis: p.preis, gesamt: p.gesamt, steuersatz: p.steuersatz })) },
     },
   });
+  await lieferscheineAutomatisch(r.id);
   await pruefungAktualisieren(r.id, g);
   return r;
+}
+
+/**
+ * Offene Lieferscheine automatisch zuordnen: Lieferscheine der Bestellung und Lieferscheine
+ * desselben Lieferanten, deren Nummer in der Rechnung vorkommt (XML oder Positionstexte).
+ */
+async function lieferscheineAutomatisch(id: string) {
+  const r = await db.eingangsrechnung.findUniqueOrThrow({ where: { id }, select: { id: true, firmaId: true, lieferantId: true, bestellungId: true, xml: true, positionen: { select: { text: true } } } });
+  const text = `${r.xml ?? ""} ${r.positionen.map((p) => p.text).join(" ")}`.toUpperCase();
+  const kandidaten = await db.lieferschein.findMany({
+    where: { firmaId: r.firmaId, status: "OFFEN", eingangsrechnungId: null, OR: [...(r.bestellungId ? [{ bestellungId: r.bestellungId }] : []), ...(r.lieferantId ? [{ lieferantId: r.lieferantId, nummer: { not: null } }] : [])] },
+    select: { id: true, nummer: true, bestellungId: true },
+  });
+  const treffer = kandidaten.filter((l) => (r.bestellungId && l.bestellungId === r.bestellungId) || (l.nummer && l.nummer.length >= 3 && new RegExp(`(^|[^A-Z0-9])${l.nummer.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^A-Z0-9]|$)`).test(text)));
+  if (treffer.length) await db.lieferschein.updateMany({ where: { id: { in: treffer.map((t) => t.id) } }, data: { eingangsrechnungId: r.id } });
 }
 
 /** Automatische Prüfung (neu) laufen lassen und Ergebnis, Zuordnung und Status speichern. */
@@ -348,6 +375,9 @@ export async function pruefungAktualisieren(id: string, gelesen?: Gelesen): Prom
   const steuern = gelesen?.steuern ?? ((d["BG-23"] as Record<string, string>[] | undefined) ?? []).map((t) => ({ basis: Number(t["BT-116"] ?? 0), betrag: Number(t["BT-117"] ?? 0), kategorie: t["BT-118"] ?? null, satz: t["BT-119"] != null ? Number(t["BT-119"]) : null }));
   const elektronisch = r.format !== "PDF";
   const bestellung = r.bestellungId ? await db.bestellung.findUnique({ where: { id: r.bestellungId }, include: { positionen: true } }) : null;
+  const lieferscheine = await db.lieferschein.findMany({ where: { eingangsrechnungId: r.id }, select: { nummer: true, datum: true, betrag: true }, orderBy: [{ datum: "asc" }, { nummer: "asc" }] });
+  // Lieferscheinnummern, auf die sich die Rechnung selbst beruft (BT-16)
+  const lsReferenzen = [d["BT-16"]].filter((x): x is string => typeof x === "string" && x.trim() !== "");
   // Früher berechnete Mengen anderer, schon freigegebener Rechnungen
   const doppelt = r.rechnungsnummer
     ? await db.eingangsrechnung.findFirst({
@@ -378,6 +408,8 @@ export async function pruefungAktualisieren(id: string, gelesen?: Gelesen): Prom
       positionen: bestellung.positionen.map((p) => ({ id: p.id, artNr: p.artNr, text: p.text, menge: n(p.menge), geliefert: n(p.geliefert), berechnetVorher: n(p.berechnet), preis: n(p.preis) })),
     } : null,
     toleranzProzent: bh.preisToleranz,
+    lieferscheine: lieferscheine.map((l) => ({ nummer: l.nummer, datum: datumText(l.datum), betrag: l.betrag == null ? null : n(l.betrag) })),
+    lsReferenzen,
   };
   const erg = pruefen(eingabe);
   await db.$transaction([
@@ -445,6 +477,7 @@ export async function eingangBearbeiten(b: AktuellerBenutzer, id: string, eingab
       } : {}),
     },
   });
+  await lieferscheineAutomatisch(r.id);
   return pruefungAktualisieren(r.id);
 }
 
@@ -489,6 +522,7 @@ export async function freigeben(b: AktuellerBenutzer, id: string, begruendung: s
       if (best.status !== "STORNIERT") await tx.bestellung.update({ where: { id: best.id }, data: { status: lieferstatus(pos) } });
     }
     await tx.eingangsrechnung.update({ where: { id: r.id }, data: { status: "FREIGEGEBEN", freigegebenVonId: b.id, freigegebenAm: new Date(), freigabeNotiz: leer(begruendung) } });
+    await tx.lieferschein.updateMany({ where: { eingangsrechnungId: r.id }, data: { status: "ABGERECHNET" } });
     if (r.projektId) await tx.logbuchEintrag.create({ data: { projektId: r.projektId, benutzerId: b.id, art: "SYSTEM", text: `Eingangsrechnung ${r.rechnungsnummer} von ${r.lieferantName ?? ""} freigegeben (${n(r.brutto).toFixed(2).replace(".", ",")} € brutto)` } });
   });
 }
@@ -505,6 +539,7 @@ export async function freigabeZuruecknehmen(b: AktuellerBenutzer, id: string) {
       await tx.bestellung.update({ where: { id: r.bestellungId }, data: { status: lieferstatus(pos) } });
     }
     await tx.eingangsrechnung.update({ where: { id: r.id }, data: { status: "PRUEFUNG", freigegebenVonId: null, freigegebenAm: null } });
+    await tx.lieferschein.updateMany({ where: { eingangsrechnungId: r.id }, data: { status: "OFFEN" } });
   });
 }
 
@@ -513,7 +548,11 @@ export async function ablehnen(b: AktuellerBenutzer, id: string, grund: string) 
   const r = await eingangLaden(b, id);
   if (!["NEU", "PRUEFUNG"].includes(r.status)) throw new FachFehler("Nur ungeprüfte oder geprüfte, nicht freigegebene Rechnungen lassen sich ablehnen.");
   if (!leer(grund)) throw new FachFehler("Bitte den Grund nennen (geht in die Reklamation an den Lieferanten).");
-  await db.eingangsrechnung.update({ where: { id: r.id }, data: { status: "ABGELEHNT", ablehnGrund: grund.trim() } });
+  await db.$transaction([
+    db.eingangsrechnung.update({ where: { id: r.id }, data: { status: "ABGELEHNT", ablehnGrund: grund.trim() } }),
+    // Lieferscheine bleiben offen und warten auf die berichtigte Rechnung
+    db.lieferschein.updateMany({ where: { eingangsrechnungId: r.id }, data: { eingangsrechnungId: null } }),
+  ]);
 }
 
 export async function alsBezahlt(b: AktuellerBenutzer, id: string, datum: string, betrag: number) {

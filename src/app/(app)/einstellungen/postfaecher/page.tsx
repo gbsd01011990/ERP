@@ -6,7 +6,7 @@ import { AktionsFormular } from "@/components/aktions-formular";
 import { msZugangAktion, postfachAktion, postfachEntfernenAktion } from "../../posteingang/actions";
 
 type Mitarbeiter = { id: string; name: string; email: string };
-type PF = { id: string; art: "PERSOENLICH" | "GETEILT"; adresse: string; name: string | null; benutzerId: string | null; zugriffe: string[]; rechnungseingang: boolean };
+type PF = { id: string; art: "PERSOENLICH" | "GETEILT"; adresse: string; name: string | null; benutzerId: string | null; zugriffe: string[]; rechnungseingang: boolean; lieferscheineingang: boolean };
 
 function PostfachFormular({ mitarbeiter, p }: { mitarbeiter: Mitarbeiter[]; p?: PF }) {
   return (
@@ -38,6 +38,9 @@ function PostfachFormular({ mitarbeiter, p }: { mitarbeiter: Mitarbeiter[]; p?: 
       </fieldset>
       <label className="flex items-center gap-2 text-sm md:col-span-4">
         <input type="checkbox" name="rechnungseingang" defaultChecked={p?.rechnungseingang ?? false} /> Rechnungseingang: PDF- und XML-Anhänge als Eingangsrechnung erfassen (z. B. rechnung@)
+      </label>
+      <label className="flex items-center gap-2 text-sm md:col-span-4">
+        <input type="checkbox" name="lieferscheineingang" defaultChecked={p?.lieferscheineingang ?? false} /> Lieferscheineingang: Fotos und PDFs als Lieferschein erfassen (z. B. lieferschein@ – Kolonnen schicken das Foto einfach dorthin)
       </label>
     </AktionsFormular>
   );
@@ -94,7 +97,7 @@ export default async function Postfaecher() {
                     </summary>
                     <div className="space-y-3 bg-slate-50 px-4 py-3">
                       {p.fehler && <p className="text-sm text-red-600">{p.fehler}</p>}
-                      <PostfachFormular mitarbeiter={mitarbeiter} p={{ id: p.id, art: p.art, adresse: p.adresse, name: p.name, benutzerId: p.benutzerId, zugriffe: p.zugriffe.map((z) => z.benutzerId), rechnungseingang: p.rechnungseingang }} />
+                      <PostfachFormular mitarbeiter={mitarbeiter} p={{ id: p.id, art: p.art, adresse: p.adresse, name: p.name, benutzerId: p.benutzerId, zugriffe: p.zugriffe.map((z) => z.benutzerId), rechnungseingang: p.rechnungseingang, lieferscheineingang: p.lieferscheineingang }} />
                       {p.aktiv && (
                         <form action={postfachEntfernenAktion}>
                           <input type="hidden" name="id" value={p.id} />

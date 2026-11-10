@@ -12,7 +12,8 @@ import { datum, euro, kontaktName } from "@/lib/format";
 import { E_STATUS, KOSTENART_TEXT, einheitText } from "@/lib/einkauf/texte";
 import { AktionsFormular } from "@/components/aktions-formular";
 import { EinkaufNav } from "@/components/einkauf-nav";
-import { eingangKopfAktion, lieferantAnlegenAktion, freigebenAktion, freigabeZurueckAktion, ablehnenAktion, bezahltAktion, neuPruefenAktion } from "../../actions";
+import { eingangKopfAktion, lieferantAnlegenAktion, freigebenAktion, freigabeZurueckAktion, ablehnenAktion, bezahltAktion, neuPruefenAktion, lieferscheineZuordnenAktion } from "../../actions";
+import { passendeLieferscheine } from "@/lib/dienste/lieferscheine";
 
 const FARBE = { ok: "text-emerald-700", hinweis: "text-slate-600", warnung: "text-amber-700", fehler: "text-red-700" } as const;
 const ZEICHEN = { ok: "✓", hinweis: "i", warnung: "!", fehler: "✕" } as const;
@@ -33,6 +34,7 @@ export default async function EingangSeite({ params }: { params: Promise<{ id: s
     db.bestellung.findMany({ where: { firmaId: r.firmaId, OR: [{ status: { in: ["BESTELLT", "TEILGELIEFERT", "GELIEFERT"] }, ...(r.lieferantId ? { lieferantId: r.lieferantId } : {}) }, ...(r.bestellungId ? [{ id: r.bestellungId }] : [])] }, include: { lieferant: true }, orderBy: { bestelltAm: "desc" }, take: 100 }),
     db.projekt.findMany({ where: { firmaId: r.firmaId, status: { abgeschlossen: false } }, orderBy: { nummer: "desc" }, select: { id: true, nummer: true, titel: true }, take: 300 }),
   ]);
+  const lieferscheine = await passendeLieferscheine(r.firmaId, r);
   const f = zahlungsfrist(r);
   const fehler = p?.regeln.filter((x) => x.status === "fehler").length ?? 0;
   const mussAdmin = fehler > 0 || n(r.brutto) > bh.freigabeLimitBuero;
@@ -80,6 +82,27 @@ export default async function EingangSeite({ params }: { params: Promise<{ id: s
           {r.format === "PDF" && (
             <section className="karte p-0">
               <iframe src={`/einkauf/rechnungen/${r.id}/datei`} title="Rechnung" className="h-[70vh] w-full rounded-lg" />
+            </section>
+          )}
+
+          {lieferscheine.length > 0 && (
+            <section className="karte text-sm">
+              <h2 className="mb-1 font-semibold">Lieferscheine</h2>
+              <p className="mb-2 text-slate-600">Bei Sammelrechnungen die Lieferscheine ankreuzen, die diese Rechnung abrechnet. Mit der Freigabe gelten sie als abgerechnet.</p>
+              <AktionsFormular aktion={lieferscheineZuordnenAktion} knopf="Zuordnung speichern" knopfKlasse="btn-hell" className="space-y-1">
+                <input type="hidden" name="id" value={r.id} />
+                <fieldset disabled={!offen} className="space-y-1">
+                  {lieferscheine.map((l) => (
+                    <label key={l.id} className="flex flex-wrap items-center gap-2">
+                      <input type="checkbox" name="lieferscheinId" value={l.id} defaultChecked={l.eingangsrechnungId === r.id} />
+                      <span>{datum(l.datum)}</span><span className="font-medium">{l.nummer ?? "ohne Nr."}</span>
+                      <span className="text-slate-500">{l.lieferantName ?? ""}{l.projekt ? ` · ${l.projekt.nummer}` : ""}{l.notiz ? ` · ${l.notiz}` : ""}</span>
+                      <span>{l.betrag == null ? "ohne Betrag" : euro(l.betrag)}</span>
+                      <Link href={`/einkauf/lieferscheine/${l.id}`} target="_blank" className="text-marke">Foto ({l._count.dateien})</Link>
+                    </label>
+                  ))}
+                </fieldset>
+              </AktionsFormular>
             </section>
           )}
 

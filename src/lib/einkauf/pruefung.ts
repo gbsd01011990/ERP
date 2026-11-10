@@ -29,6 +29,10 @@ export type PruefEingabe = {
   bekannteIbans: string[];
   bestellung: { nummer: string | null; positionen: BestellPos[] } | null;
   toleranzProzent: number;
+  /** zugeordnete Lieferscheine (Kauf auf Lieferschein, Sammelrechnung) */
+  lieferscheine?: { nummer: string | null; datum: string; betrag: number | null }[];
+  /** Lieferscheinnummern, die in der Rechnung selbst stehen (BT-16) */
+  lsReferenzen?: string[];
 };
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
@@ -126,7 +130,21 @@ export function pruefen(e: PruefEingabe) {
     }
     if (!e.positionen.length) add("bestellung", "hinweis", "Ohne Positionen kein Abgleich mit der Bestellung möglich – bitte von Hand prüfen");
     if (!regeln.some((r) => r.gruppe === "bestellung")) add("bestellung", "ok", `Passt zu Bestellung ${b.nummer ?? ""}: Mengen und Preise wie bestellt und geliefert`);
-  } else add("bestellung", "hinweis", "Keine Bestellung zugeordnet – sachliche Richtigkeit bitte bestätigen lassen");
+  }
+  const ls = e.lieferscheine ?? [];
+  if (ls.length) {
+    const nummern = ls.map((l) => l.nummer ?? `vom ${l.datum}`).join(", ");
+    const mitBetrag = ls.filter((l) => l.betrag != null);
+    if (mitBetrag.length === ls.length) {
+      const summe = r2(mitBetrag.reduce((s, l) => s + (l.betrag ?? 0), 0));
+      if (!gleich(summe, k.netto, Math.max(1, Math.abs(k.netto) * 0.01))) add("bestellung", "warnung", `Lieferscheine (${nummern}) ergeben ${eur(summe)} netto, die Rechnung ${eur(k.netto)}`);
+      else add("bestellung", "ok", `${ls.length} Lieferschein${ls.length > 1 ? "e" : ""} (${nummern}) passen zum Rechnungsbetrag`);
+    } else add("bestellung", "ok", `${ls.length} Lieferschein${ls.length > 1 ? "e" : ""} zugeordnet (${nummern}); ${ls.length - mitBetrag.length} ohne Betrag – Positionen bitte mit den Fotos vergleichen`);
+  }
+  for (const ref of e.lsReferenzen ?? []) {
+    if (!ls.some((l) => l.nummer && textNorm(l.nummer) === textNorm(ref))) add("bestellung", "warnung", `Die Rechnung nennt Lieferschein ${ref}, der ist bei uns nicht erfasst`);
+  }
+  if (!e.bestellung && !ls.length) add("bestellung", "hinweis", "Keine Bestellung und kein Lieferschein zugeordnet – sachliche Richtigkeit bitte bestätigen lassen");
 
   // ---------------- Sicherheit
   if (e.doppelt) add("sicherheit", "fehler", `Rechnung ${e.doppelt.nummer} dieses Lieferanten ist schon erfasst${e.doppelt.datum ? ` (vom ${e.doppelt.datum})` : ""}`);

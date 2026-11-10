@@ -8,7 +8,7 @@ import { n, runden, summen } from "./kalkulation";
  * Lohnstunden-Ist aus der Zeiterfassung (ohne Pausen).
  */
 export async function nachkalkulation(projektId: string) {
-  const [belege, entnahmen, einsaetze, zeiten, eingaenge] = await Promise.all([
+  const [belege, entnahmen, einsaetze, zeiten, eingaenge, lieferscheine] = await Promise.all([
     db.angebot.findMany({
       where: { projektId, status: { notIn: ["ERSETZT", "ABGELEHNT"] } },
       include: { positionen: true },
@@ -19,10 +19,15 @@ export async function nachkalkulation(projektId: string) {
     db.zeiteintrag.findMany({ where: { projektId, kategorie: { not: "PAUSE" }, ende: { not: null } }, include: { benutzer: { select: { name: true } } } }),
     // Freigegebene Eingangsrechnungen; Lagerware zählt erst bei der Entnahme
     db.eingangsrechnung.findMany({
-      where: { projektId, status: { in: ["FREIGEGEBEN", "BEZAHLT"] }, NOT: { bestellung: { lagerId: { not: null } } } },
+      // Sammelrechnungen zu Direktkäufen zählen über ihre Lieferscheine, nicht doppelt
+      where: { projektId, status: { in: ["FREIGEGEBEN", "BEZAHLT"] }, NOT: [{ bestellung: { lagerId: { not: null } } }, { lieferscheine: { some: { bestellungId: null } } }] },
       select: { id: true, kostenart: true, netto: true, lieferantName: true, rechnungsnummer: true, datum: true }, orderBy: { datum: "desc" },
     }),
+    // Direktkäufe auf Lieferschein (ohne Bestellung) zählen ab dem Kauf
+    db.lieferschein.findMany({ where: { projektId, status: { not: "STORNIERT" }, bestellungId: null }, select: { id: true, betrag: true, nummer: true, datum: true, lieferantName: true }, orderBy: { datum: "desc" } }),
   ]);
+  const istLieferscheine = runden(lieferscheine.reduce((s, l) => s + n(l.betrag), 0));
+  const lieferscheineOhneBetrag = lieferscheine.filter((l) => l.betrag == null).length;
   const ek = (art: string) => runden(eingaenge.filter((e) => e.kostenart === art).reduce((s, e) => s + n(e.netto), 0));
   const basis =
     belege.find((b) => b.art === "AUFTRAGSBESTAETIGUNG") ??
@@ -33,7 +38,7 @@ export async function nachkalkulation(projektId: string) {
     ? summen(basis.positionen, { stundensatz: basis.stundensatz, materialAufschlag: basis.materialAufschlag, fremdAufschlag: basis.fremdAufschlag, mwstSatz: basis.mwstSatz })
     : null;
   const istMaterialLager = runden(entnahmen.reduce((s, e) => s + n(e.wert), 0));
-  const istMaterial = runden(istMaterialLager + ek("MATERIAL"));
+  const istMaterial = runden(istMaterialLager + ek("MATERIAL") + istLieferscheine);
   const istGeraete = runden(einsaetze.reduce((s, e) => s + n(e.stunden) * n(e.kostensatz), 0) + ek("GERAETE"));
   const istFremd = ek("FREMDLEISTUNG");
   const istSonstiges = ek("SONSTIGES");
@@ -48,5 +53,5 @@ export async function nachkalkulation(projektId: string) {
   const istLohnStunden = Math.round((istLohnMinuten / 60) * 10) / 10;
   const istLohn = basis ? runden((istLohnMinuten / 60) * n(basis.stundensatz)) : null;
   const lohnJeMitarbeiter = [...proMitarbeiter.entries()].map(([name, min]) => ({ name, stunden: Math.round((min / 60) * 10) / 10 })).sort((a, b) => b.stunden - a.stunden);
-  return { basis, soll, istMaterial, istGeraete, istGeraeteStunden, istLohnStunden, istLohn, lohnJeMitarbeiter, entnahmen, einsaetze, istFremd, istSonstiges, eingaenge };
+  return { basis, soll, istMaterial, istGeraete, istGeraeteStunden, istLohnStunden, istLohn, lohnJeMitarbeiter, entnahmen, einsaetze, istFremd, istSonstiges, eingaenge, lieferscheine, lieferscheineOhneBetrag };
 }

@@ -104,6 +104,7 @@ model Firma {
   mahnungen          Mahnung[]
   bestellungen       Bestellung[]
   eingangsrechnungen Eingangsrechnung[]
+  lieferscheine      Lieferschein[]
 }
 
 model Benutzer {
@@ -142,6 +143,7 @@ model Benutzer {
   bestellungenBestellt      Bestellung[]       @relation("BestellungBesteller")
   wareneingaenge            Wareneingang[]
   eingangsFreigaben         Eingangsrechnung[] @relation("EingangFreigabe")
+  lieferscheineErfasst      Lieferschein[]
 }
 
 model Zugriff {
@@ -197,6 +199,8 @@ model Kontakt {
 
   bestellungen       Bestellung[]
   eingangsrechnungen Eingangsrechnung[]
+
+  lieferscheine Lieferschein[]
 
   @@index([nachname])
   @@index([firmenname])
@@ -318,6 +322,8 @@ model Projekt {
 
   bestellungen       Bestellung[]
   eingangsrechnungen Eingangsrechnung[]
+
+  lieferscheine Lieferschein[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -823,6 +829,8 @@ model Postfach {
 
   rechnungseingang Boolean @default(false) // Anhänge (PDF, XML) werden als Eingangsrechnung angelegt
 
+  lieferscheineingang Boolean @default(false) // Anhänge (Fotos, PDF) werden als Lieferschein erfasst
+
   @@unique([firmaId, adresse])
 }
 
@@ -872,6 +880,8 @@ model Email {
   aufgaben     Aufgabe[]
 
   eingangsrechnungen Eingangsrechnung[]
+
+  lieferscheine Lieferschein[]
 
   @@unique([postfachId, graphId])
   @@index([firmaId, empfangenAm])
@@ -1317,6 +1327,8 @@ model Bestellung {
   wareneingaenge Wareneingang[]
   rechnungen     Eingangsrechnung[]
 
+  lieferscheine Lieferschein[]
+
   @@index([firmaId, status])
   @@index([lieferantId])
 }
@@ -1342,16 +1354,17 @@ model BestellPosition {
 }
 
 model Wareneingang {
-  id           String                 @id @default(cuid())
-  bestellungId String
-  datum        DateTime
-  lieferschein String?
-  notiz        String?
-  benutzerId   String?
-  createdAt    DateTime               @default(now())
-  bestellung   Bestellung             @relation(fields: [bestellungId], references: [id], onDelete: Cascade)
-  benutzer     Benutzer?              @relation(fields: [benutzerId], references: [id], onDelete: SetNull)
-  positionen   WareneingangPosition[]
+  id            String                 @id @default(cuid())
+  bestellungId  String
+  datum         DateTime
+  lieferschein  String?
+  notiz         String?
+  benutzerId    String?
+  createdAt     DateTime               @default(now())
+  bestellung    Bestellung             @relation(fields: [bestellungId], references: [id], onDelete: Cascade)
+  benutzer      Benutzer?              @relation(fields: [benutzerId], references: [id], onDelete: SetNull)
+  positionen    WareneingangPosition[]
+  lieferscheine Lieferschein[]
 }
 
 model WareneingangPosition {
@@ -1430,6 +1443,8 @@ model Eingangsrechnung {
   email            Email?             @relation(fields: [emailId], references: [id], onDelete: SetNull)
   positionen       EingangsPosition[]
 
+  lieferscheine Lieferschein[]
+
   @@index([firmaId, status])
   @@index([lieferantId, rechnungsnummer])
   @@index([firmaId, dateiHash])
@@ -1451,4 +1466,62 @@ model EingangsPosition {
   bestellPosition   BestellPosition? @relation(fields: [bestellPositionId], references: [id], onDelete: SetNull)
 
   @@index([rechnungId])
+}
+
+// ---------------------------------------------------------------- Lieferscheine
+// Kauf auf Lieferschein (z. B. Kleinmaterial im Baustoffhandel) und Lieferscheine zu
+// Bestellungen. Die Sammelrechnung des Händlers wird gegen die Lieferscheine geprüft.
+
+enum LieferscheinStatus {
+  OFFEN // noch nicht abgerechnet
+  ABGERECHNET // in einer freigegebenen Eingangsrechnung enthalten
+  STORNIERT
+}
+
+model Lieferschein {
+  id                 String              @id @default(cuid())
+  firmaId            String
+  status             LieferscheinStatus  @default(OFFEN)
+  quelle             String // FOTO, UPLOAD, EMAIL, WARENEINGANG
+  lieferantId        String?
+  lieferantName      String? // solange kein Kontakt zugeordnet ist
+  nummer             String? // Lieferschein-Nr. des Händlers
+  datum              DateTime
+  projektId          String?
+  bestellungId       String?
+  wareneingangId     String?
+  eingangsrechnungId String?
+  betrag             Decimal?            @db.Decimal(12, 2) // netto, falls auf dem Lieferschein
+  notiz              String?
+  erfasstVonId       String?
+  emailId            String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  firma              Firma               @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  lieferant          Kontakt?            @relation(fields: [lieferantId], references: [id])
+  projekt            Projekt?            @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  bestellung         Bestellung?         @relation(fields: [bestellungId], references: [id], onDelete: SetNull)
+  wareneingang       Wareneingang?       @relation(fields: [wareneingangId], references: [id], onDelete: SetNull)
+  eingangsrechnung   Eingangsrechnung?   @relation(fields: [eingangsrechnungId], references: [id], onDelete: SetNull)
+  erfasstVon         Benutzer?           @relation(fields: [erfasstVonId], references: [id], onDelete: SetNull)
+  email              Email?              @relation(fields: [emailId], references: [id], onDelete: SetNull)
+  dateien            LieferscheinDatei[]
+
+  @@index([firmaId, status, datum])
+  @@index([lieferantId, status])
+  @@index([projektId])
+}
+
+model LieferscheinDatei {
+  id             String       @id @default(cuid())
+  lieferscheinId String
+  name           String
+  typ            String // image/jpeg, image/png, image/webp, image/heic, application/pdf
+  groesse        Int
+  hash           String
+  daten          Bytes
+  createdAt      DateTime     @default(now())
+  lieferschein   Lieferschein @relation(fields: [lieferscheinId], references: [id], onDelete: Cascade)
+
+  @@index([hash])
 }

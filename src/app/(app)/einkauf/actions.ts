@@ -6,6 +6,7 @@ import { benutzerPflicht } from "@/lib/auth";
 import { FachFehler } from "@/lib/dienste/fehler";
 import { text, zahl, zahlOderNull } from "@/lib/formular";
 import * as d from "@/lib/dienste/einkauf";
+import * as ls from "@/lib/dienste/lieferscheine";
 
 type Ergebnis = { fehler?: string; ok?: string; zeit: number } | null;
 const alle = () => benutzerPflicht(["ADMIN", "BUERO", "KOLONNE"]);
@@ -69,7 +70,8 @@ export async function wareneingangAktion(_: unknown, f: FormData): Promise<Ergeb
   const mengen: Record<string, number> = {};
   for (const [k] of f.entries()) if (k.startsWith("menge_")) mengen[k.slice(6)] = zahl(f, k);
   return melden(async () => {
-    await d.wareneingangBuchen(b, id(f), { datum: String(f.get("datum")), lieferschein: text(f, "lieferschein"), notiz: text(f, "notiz"), mengen });
+    const dateien = await Promise.all(f.getAll("datei").filter((x): x is File => x instanceof File && x.size > 0).map(async (x) => ({ name: x.name, daten: Buffer.from(await x.arrayBuffer()) })));
+    await d.wareneingangBuchen(b, id(f), { datum: String(f.get("datum")), lieferschein: text(f, "lieferschein"), notiz: text(f, "notiz"), mengen }, dateien);
     return "Wareneingang gebucht.";
   }, `/einkauf/bestellungen/${id(f)}`, "/lager");
 }
@@ -143,4 +145,38 @@ export async function neuPruefenAktion(f: FormData) {
   await d.eingangLaden(b, id(f));
   await d.pruefungAktualisieren(id(f));
   revalidatePath(`/einkauf/rechnungen/${id(f)}`);
+}
+
+// ---------------------------------------------------------------- Lieferscheine
+const lsEingabe = (f: FormData) => ({
+  lieferantId: text(f, "lieferantId"), lieferantName: text(f, "lieferantName"), nummer: text(f, "nummer"),
+  datum: String(f.get("datum") ?? ""), projektId: text(f, "projektId"), betrag: zahlOderNull(f, "betrag"), notiz: text(f, "notiz"),
+});
+const lsDateien = (f: FormData) => Promise.all(f.getAll("datei").filter((x): x is File => x instanceof File && x.size > 0).map(async (x) => ({ name: x.name, daten: Buffer.from(await x.arrayBuffer()) })));
+
+export async function lieferscheinNeuAktion(_: unknown, f: FormData): Promise<Ergebnis> {
+  const b = await alle();
+  return melden(async () => {
+    const dateien = await lsDateien(f);
+    const l = await ls.lieferscheinAnlegen({ b }, lsEingabe(f), dateien, dateien.some((x) => /\.pdf$/i.test(x.name)) ? "UPLOAD" : "FOTO");
+    return `Lieferschein${l.nummer ? ` ${l.nummer}` : ""} erfasst.`;
+  }, "/einkauf/lieferscheine");
+}
+export async function lieferscheinBearbeitenAktion(_: unknown, f: FormData): Promise<Ergebnis> {
+  const b = await alle();
+  return melden(async () => { await ls.lieferscheinBearbeiten(b, id(f), lsEingabe(f), await lsDateien(f)); }, `/einkauf/lieferscheine/${id(f)}`, "/einkauf/lieferscheine");
+}
+export async function lieferscheinStornoAktion(f: FormData) {
+  const b = await alle();
+  await ls.lieferscheinStornieren(b, id(f));
+  revalidatePath("/einkauf/lieferscheine");
+  redirect("/einkauf/lieferscheine");
+}
+export async function lieferscheineZuordnenAktion(_: unknown, f: FormData): Promise<Ergebnis> {
+  const b = await buero();
+  return melden(async () => {
+    const n = await ls.lieferscheineZuordnen(b, id(f), f.getAll("lieferscheinId").map(String));
+    await d.pruefungAktualisieren(id(f));
+    return `${n} Lieferschein(e) zugeordnet, Prüfung aktualisiert.`;
+  }, `/einkauf/rechnungen/${id(f)}`);
 }

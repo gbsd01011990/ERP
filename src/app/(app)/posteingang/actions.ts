@@ -173,7 +173,7 @@ export async function postfachAktion(_: unknown, form: FormData): Promise<Ergebn
     const p = await postfachSpeichern(b, text(form, "id"), {
       art: z.enum(["PERSOENLICH", "GETEILT"]).parse(form.get("art")),
       adresse: String(form.get("adresse") ?? ""), name: text(form, "name"), benutzerId: text(form, "benutzerId"),
-      zugriffe: form.getAll("zugriffe").map(String), rechnungseingang: form.get("rechnungseingang") === "on",
+      zugriffe: form.getAll("zugriffe").map(String), rechnungseingang: form.get("rechnungseingang") === "on", lieferscheineingang: form.get("lieferscheineingang") === "on",
     });
     revalidatePath("/einstellungen/postfaecher");
     // Erster Abruf gleich im Anschluss, Fehler zeigt die Postfachliste

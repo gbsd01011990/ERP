@@ -32,6 +32,7 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
       angebote: { orderBy: [{ createdAt: "asc" }] },
       rechnungen: { orderBy: [{ createdAt: "asc" }], omit: { pdf: true } },
       bestellungen: { orderBy: [{ createdAt: "desc" }], include: { lieferant: true } },
+      lieferscheine: { where: { bestellungId: null, status: { not: "STORNIERT" } }, orderBy: [{ datum: "desc" }], include: { lieferant: true } },
       eingangsrechnungen: { orderBy: [{ datum: "desc" }], omit: { datei: true, xml: true, daten: true }, include: { lieferant: true } },
     },
   });
@@ -160,6 +161,7 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
                 </AktionsFormular>
               )) : null;
             })()}
+            <Link href={`/einkauf/lieferscheine?projekt=${p.id}`} className="btn-hell py-1">📷 Lieferschein erfassen</Link>
             <AktionsFormular aktion={bestellungNeuAktion} knopf="+ Bestellanforderung" knopfKlasse="btn-hell py-1" className="flex gap-2">
               <input type="hidden" name="projektId" value={p.id} /><input name="betreff" required placeholder="Was wird gebraucht?" className="eingabe py-1" aria-label="Was wird gebraucht" />
             </AktionsFormular>
@@ -174,6 +176,13 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
               </Link>
             ))}
             {p.bestellungen.length === 0 && <p className="text-slate-500">Keine Bestellungen.</p>}
+            {p.lieferscheine.map((l) => (
+              <Link key={l.id} href={`/einkauf/lieferscheine/${l.id}`} className="flex gap-2 rounded px-1 py-1 hover:bg-slate-50">
+                <span className="font-medium text-marke">Lieferschein {l.nummer ?? ""}</span><span>{datum(l.datum)}</span>
+                <span className="truncate text-slate-500">{l.lieferant ? kontaktName(l.lieferant) : l.lieferantName}{l.notiz ? ` · ${l.notiz}` : ""}</span>
+                <span className="ml-auto">{l.betrag == null ? "" : euro(l.betrag)}</span>
+              </Link>
+            ))}
           </div>
           {buero && (
             <div>
@@ -217,12 +226,13 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      {(nk.soll || nk.entnahmen.length > 0 || nk.einsaetze.length > 0 || nk.istLohnStunden > 0 || nk.eingaenge.length > 0) && (
+      {(nk.soll || nk.entnahmen.length > 0 || nk.einsaetze.length > 0 || nk.istLohnStunden > 0 || nk.eingaenge.length > 0 || nk.lieferscheine.length > 0) && (
         <section className="karte overflow-x-auto text-sm">
           <h2 className="mb-1 font-semibold">Nachkalkulation</h2>
           <p className="mb-3 text-xs text-slate-500">
             {nk.basis ? `Soll aus ${nk.basis.art === "ANGEBOT" ? "Angebot" : "Auftragsbestätigung"} ${nk.basis.nummer}${nk.basis.version > 1 ? `-${nk.basis.version}` : ""}` : "Noch kein Angebot als Soll"}
-            {" · Ist aus Zeiterfassung, Lagerentnahmen, Geräteeinsätzen und freigegebenen Eingangsrechnungen (netto)."}
+            {" · Ist aus Zeiterfassung, Lagerentnahmen, Geräteeinsätzen, Lieferscheinen und freigegebenen Eingangsrechnungen (netto)."}
+            {nk.lieferscheineOhneBetrag > 0 && <span className="text-amber-700">{` ${nk.lieferscheineOhneBetrag} Lieferschein(e) ohne Betrag fehlen im Material-Ist.`}</span>}
           </p>
           <table className="tabelle max-w-2xl">
             <thead><tr><th>Kostenart</th><th className="text-right">Soll</th><th className="text-right">Ist</th><th className="text-right">Abweichung</th></tr></thead>

@@ -11,6 +11,7 @@ import { datum, euro, kontaktName } from "@/lib/format";
 import { B_STATUS, E_STATUS } from "@/lib/einkauf/texte";
 import { AktionsFormular } from "@/components/aktions-formular";
 import { EinkaufNav } from "@/components/einkauf-nav";
+import { FotoFeld } from "@/components/foto-feld";
 import { bestellungKopfAktion, bestellPosNeuAktion, bestellPosAktion, bestellenAktion, bestellungStornoAktion, wareneingangAktion } from "../../actions";
 
 const z3 = (v: unknown) => n(v as number).toLocaleString("de-DE", { maximumFractionDigits: 3 });
@@ -124,6 +125,7 @@ export default async function BestellungSeite({ params }: { params: Promise<{ id
             <div><label className="label">Datum</label><input type="date" name="datum" defaultValue={isoTag(new Date())} className="eingabe" /></div>
             <div><label className="label">Lieferschein-Nr.</label><input name="lieferschein" className="eingabe" /></div>
             <div className="md:col-span-2"><label className="label">Notiz (Mängel, Teillieferung …)</label><input name="notiz" className="eingabe" /></div>
+            <div className="md:col-span-4"><span className="label">Lieferschein (Foto oder PDF)</span><FotoFeld /></div>
             {x.positionen.map((p) => {
               const rest = Math.max(0, n(p.menge) - n(p.geliefert));
               return (
@@ -144,6 +146,7 @@ export default async function BestellungSeite({ params }: { params: Promise<{ id
             {x.wareneingaenge.map((w) => (
               <div key={w.id} className="border-b border-slate-100 py-1">
                 {datum(w.datum)}{w.lieferschein ? ` · Lieferschein ${w.lieferschein}` : ""} · {w.benutzer?.name}
+                {w.lieferscheine.map((l) => <Link key={l.id} href={`/einkauf/lieferscheine/${l.id}`} className="ml-2 text-marke">Lieferschein ansehen</Link>)}
                 <span className="block text-xs text-slate-500">{w.positionen.map((wp) => { const p = x.positionen.find((q) => q.id === wp.bestellPositionId); return `${z3(wp.menge)} ${p?.einheit ?? ""} ${p?.text ?? ""}`; }).join(" · ")}{w.notiz ? ` · ${w.notiz}` : ""}</span>
               </div>
             ))}

@@ -12,6 +12,8 @@ export function useFormularAktion<S>(aktion: (s: Awaited<S>, f: FormData) => Pro
   const state = zustand as Awaited<S> | null;
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Ein Feld arbeitet noch (z. B. Foto wird verkleinert): erst danach absenden
+    if (e.currentTarget.dataset.beschaeftigt === "1") return;
     const daten = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
     startTransition(() => ausloesen(daten));
   };

@@ -57,7 +57,7 @@ test("Rechenfehler, doppelte Rechnung, neue IBAN, fremder Empfänger, fehlende U
   assert.match(t, /fehler: Neue Bankverbindung DE89370400440532013000/);
   assert.match(t, /warnung: Rechnung ist an „Riedrich und Dremel GmbH“ adressiert/);
   assert.match(t, /fehler: USt-IdNr. oder Steuernummer/);
-  assert.match(t, /hinweis: Keine Bestellung zugeordnet/);
+  assert.match(t, /hinweis: Keine Bestellung und kein Lieferschein zugeordnet/);
 });
 
 test("§ 13b und Zuordnung über Reihenfolge", () => {
@@ -66,4 +66,16 @@ test("§ 13b und Zuordnung über Reihenfolge", () => {
   const z = zuordnen([{ nr: 1, artNr: null, text: "A", menge: 1, preis: 1, gesamt: 1 }, { nr: 2, artNr: null, text: "B", menge: 1, preis: 1, gesamt: 1 }],
     [{ id: "x", artNr: null, text: "Kies", menge: 1, geliefert: 1, berechnetVorher: 0, preis: 1 }, { id: "y", artNr: null, text: "Sand", menge: 1, geliefert: 1, berechnetVorher: 0, preis: 1 }]);
   assert.deepEqual(Object.fromEntries(z), { 1: "x", 2: "y" });
+});
+
+test("Sammelrechnung gegen Lieferscheine: Summe, fehlende Beträge, unbekannter Lieferschein", () => {
+  const ohneBestellung = { bestellung: null, positionen: [], kopf: { ...basis().kopf, summePositionen: null } };
+  let t = pruefen(basis({ ...ohneBestellung, lieferscheine: [{ nummer: "4711", datum: "03.11.2026", betrag: 300 }, { nummer: "4712", datum: "04.11.2026", betrag: 200 }] })).regeln.map((x) => `${x.status}: ${x.text}`).join("\n");
+  assert.match(t, /ok: 2 Lieferscheine \(4711, 4712\) passen zum Rechnungsbetrag/);
+  t = pruefen(basis({ ...ohneBestellung, lieferscheine: [{ nummer: "4711", datum: "03.11.2026", betrag: 300 }] })).regeln.map((x) => `${x.status}: ${x.text}`).join("\n");
+  assert.match(t, /warnung: Lieferscheine \(4711\) ergeben 300,00 € netto, die Rechnung 500,00 €/);
+  t = pruefen(basis({ ...ohneBestellung, lieferscheine: [{ nummer: null, datum: "03.11.2026", betrag: null }], lsReferenzen: ["LS-99"] })).regeln.map((x) => `${x.status}: ${x.text}`).join("\n");
+  assert.match(t, /ok: 1 Lieferschein zugeordnet \(vom 03\.11\.2026\); 1 ohne Betrag/);
+  assert.match(t, /warnung: Die Rechnung nennt Lieferschein LS-99, der ist bei uns nicht erfasst/);
+  assert.doesNotMatch(t, /Keine Bestellung und kein Lieferschein/);
 });

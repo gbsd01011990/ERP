@@ -121,7 +121,14 @@ Einkauf (Bestellung → Wareneingang → Eingangsrechnung → Prüfung → Freig
   Bestellvorschlag aus dem Lager unter Mindestbestand). Material und Fremdleistung lassen sich direkt aus der
   Auftragsbestätigung übernehmen. Das Büro löst die Bestellung aus (Nummernkreis BESTELLUNG, Wertgrenze
   einstellbar, darüber ein Admin) und schickt sie als PDF im CD per E-Mail.
-- **Wareneingang** je Lieferschein, auch Teillieferungen; Lagerartikel gehen mit dem Bestellpreis ins Lager.
+- **Wareneingang** je Lieferschein, auch Teillieferungen, mit Foto oder PDF des Lieferscheins; Lagerartikel gehen
+  mit dem Bestellpreis ins Lager.
+- **Kauf auf Lieferschein** (Kleinmaterial im Baustoffhandel): Foto am Handy (Kamera, im Browser auf 2000 px
+  verkleinert), PDF oder E-Mail an ein Postfach mit „Lieferscheineingang“ (z. B. lieferschein@; Nummer aus dem
+  Betreff, Händler über den Absender). Kolonnen erfassen und sehen nur ihre eigenen. Dateien werden am Inhalt
+  geprüft, doppelte Fotos erkannt. Die Sammelrechnung des Händlers prüft das ERP gegen die Lieferscheine
+  (automatische Zuordnung über die Nummer, Summenvergleich); mit der Freigabe sind sie abgerechnet. Direktkäufe
+  zählen sofort in der Nachkalkulation des Projekts, die Sammelrechnung nicht noch einmal.
 - **Eingangsrechnungen**: Upload oder automatisch aus einem Postfach mit „Rechnungseingang“ (z. B. rechnung@).
   XRechnung (CII und UBL) und ZUGFeRD werden gelesen (factur-x), reine PDFs von Hand erfasst. Lieferant über
   USt-IdNr., IBAN oder Name, Bestellung über die Bestellnummer in der Rechnung.

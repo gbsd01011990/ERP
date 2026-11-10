@@ -7,6 +7,8 @@ import { appToken, graph, graphPost, postfachPfad, MicrosoftFehler, NACHRICHT_FE
 import { htmlZuText, adresseNormal, textZuHtml, adressenLesen } from "../mailtext";
 import { FachFehler } from "./fehler";
 import { eingangErfassen } from "./einkauf";
+import { lieferscheinAnlegen, nummerAusText } from "./lieferscheine";
+import { berlinTag } from "../zeit";
 import { rollePruefen } from "./zugriff";
 
 const TEXT_MAX = 50_000;
@@ -61,6 +63,8 @@ export const PostfachEingabe = z.object({
   zugriffe: z.array(z.string()).default([]),
   /** Anhänge als Eingangsrechnung erfassen (z. B. rechnung@) */
   rechnungseingang: z.boolean().default(false),
+  /** Anhänge (Fotos, PDF) als Lieferschein erfassen (z. B. lieferschein@) */
+  lieferscheineingang: z.boolean().default(false),
 });
 
 /** Admin legt ein Postfach an oder ändert Freigaben. Vorher wird geprüft, ob Microsoft den Zugriff erlaubt. */
@@ -80,7 +84,7 @@ export async function postfachSpeichern(b: AktuellerBenutzer, id: string | null,
     const token = await tokenFuer(b.mandant.id);
     await graph(token, `${postfachPfad(e.adresse)}/mailFolders/inbox?$select=id`); // wirft mit verständlicher Meldung
   }
-  const daten = { art: e.art, adresse: e.adresse, name: e.name?.trim() || null, benutzerId: e.art === "PERSOENLICH" ? e.benutzerId! : null, rechnungseingang: e.rechnungseingang, aktiv: true, fehler: null };
+  const daten = { art: e.art, adresse: e.adresse, name: e.name?.trim() || null, benutzerId: e.art === "PERSOENLICH" ? e.benutzerId! : null, rechnungseingang: e.rechnungseingang, lieferscheineingang: e.lieferscheineingang, aktiv: true, fehler: null };
   try {
     return await db.$transaction(async (tx) => {
       const p = alt
@@ -222,10 +226,30 @@ async function nachrichtSpeichern(p: Postfach, n: GraphNachricht, ordner: Ordner
 
 type GraphAnhang = { "@odata.type"?: string; id: string; name: string; contentType?: string; size?: number; isInline?: boolean; contentBytes?: string };
 
-/** Rechnungseingang: PDF- und XML-Anhänge einer Mail als Eingangsrechnung erfassen. */
-async function anhaengeAlsRechnung(token: string, p: Postfach, emailId: string, graphId: string) {
+/**
+ * Belegeingang: Anhänge einer Mail als Eingangsrechnung (PDF, XML) oder Lieferschein (Foto, PDF) erfassen.
+ * Ein Lieferschein im Rechnungspostfach wird am Wort „Lieferschein“ in Betreff oder Dateiname erkannt.
+ */
+async function anhaengeAlsBeleg(token: string, p: Postfach, mail: { id: string; betreff: string; kontaktId: string | null; empfangenAm: Date; vonAdresse: string }, graphId: string) {
   const r: { value: GraphAnhang[] } = await graph(token, `${postfachPfad(p.adresse)}/messages/${encodeURIComponent(graphId)}/attachments`);
-  const dateien = r.value.filter((a) => (a["@odata.type"] ?? "").endsWith("fileAttachment") && !a.isInline && a.contentBytes && /\.(pdf|xml)$/i.test(a.name));
+  const echt = r.value.filter((a) => (a["@odata.type"] ?? "").endsWith("fileAttachment") && !a.isInline && a.contentBytes);
+  // Kleine Bilder sind meist Logos aus der Signatur
+  const belege = echt.filter((a) => /\.(pdf|jpe?g|png|webp|heic|heif)$/i.test(a.name) && !(/\.(png|jpe?g|webp)$/i.test(a.name) && (a.size ?? Buffer.from(a.contentBytes!, "base64").length) < 15000));
+  const istLieferschein = p.lieferscheineingang || (/lieferschein/i.test(`${mail.betreff} ${echt.map((a) => a.name).join(" ")}`) && !echt.some((a) => /\.xml$/i.test(a.name)));
+  if (istLieferschein) {
+    if (!belege.length) return 0;
+    const kontakt = mail.kontaktId ? await db.kontakt.findUnique({ where: { id: mail.kontaktId } }) : null;
+    await lieferscheinAnlegen({ firmaId: p.firmaId }, {
+      lieferantId: kontakt?.typ === "LIEFERANT" ? kontakt.id : null, lieferantName: kontakt?.typ === "LIEFERANT" ? null : mail.vonAdresse,
+      nummer: nummerAusText(`${mail.betreff} ${belege.map((a) => a.name).join(" ")}`), datum: berlinTag(mail.empfangenAm),
+      notiz: `per E-Mail: ${mail.betreff}`.slice(0, 300),
+    }, belege.map((a) => ({ name: a.name, daten: Buffer.from(a.contentBytes!, "base64") })), "EMAIL", { emailId: mail.id });
+    await db.email.update({ where: { id: mail.id }, data: { ignoriert: true, zuordnung: "AUTO" } });
+    return 1;
+  }
+  if (!p.rechnungseingang) return 0;
+  const emailId = mail.id;
+  const dateien = echt.filter((a) => /\.(pdf|xml)$/i.test(a.name));
   // XRechnung und Sicht-PDF kommen oft zusammen: dann reicht das XML
   const xml = dateien.filter((a) => /\.xml$/i.test(a.name));
   const auswahl = xml.length ? xml : dateien;
@@ -264,8 +288,12 @@ export async function postfachAbrufen(postfachId: string) {
           const e = await nachrichtSpeichern(p, n, ordner);
           const art = typeof e === "string" ? e : "neu";
           zaehler[art] = (zaehler[art] ?? 0) + 1;
-          if (typeof e !== "string" && p.rechnungseingang && ordner === "inbox" && n.hasAttachments) {
-            zaehler.rechnungen = (zaehler.rechnungen ?? 0) + (await anhaengeAlsRechnung(token, p, e.neu.id, n.id));
+          if (typeof e !== "string" && (p.rechnungseingang || p.lieferscheineingang) && ordner === "inbox" && n.hasAttachments) {
+            try {
+              zaehler.belege = (zaehler.belege ?? 0) + (await anhaengeAlsBeleg(token, p, e.neu, n.id));
+            } catch (f) {
+              console.warn(`Belege aus „${e.neu.betreff}“ nicht erfasst: ${(f as Error).message}`);
+            }
           }
         }
         url = r["@odata.nextLink"];
