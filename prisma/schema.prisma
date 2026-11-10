@@ -74,34 +74,36 @@ model Firma {
   msClientSecret     String? // verschlüsselt
   createdAt          DateTime @default(now())
 
-  zugriffe      Zugriff[]
-  projekte      Projekt[]
-  projektTypen  ProjektTyp[]
-  status        PipelineStatus[]
-  nummernkreise Nummernkreis[]
-  kontaktIds    KontaktFremdId[]
-  leistungen    Leistung[]
-  angebote      Angebot[]
-  lager         Lager[]
-  artikel       Artikel[]
-  geraete       Geraet[]
-  kostenplaene  Kostenplan[]
-  sitzungen     Sitzung[]
-  apiSchluessel ApiSchluessel[]
-  zeiten        Zeiteintrag[]
-  logbuch       LogbuchEintrag[]
-  postfaecher   Postfach[]
-  emails        Email[]
-  aufgaben      Aufgabe[]
-  rechnungen    Rechnung[]
-  telefonAgent  TelefonAgent?
-  gespraeche    Gespraech[]
-  termine       Termin[]
-  kanalZugaenge KanalZugang[]
-  buchhaltung   Json? // DATEV-Nummern, Konten (SKR03), Mahnregeln
-  zahlungen     Zahlung[]
-  bankumsaetze  Bankumsatz[]
-  mahnungen     Mahnung[]
+  zugriffe           Zugriff[]
+  projekte           Projekt[]
+  projektTypen       ProjektTyp[]
+  status             PipelineStatus[]
+  nummernkreise      Nummernkreis[]
+  kontaktIds         KontaktFremdId[]
+  leistungen         Leistung[]
+  angebote           Angebot[]
+  lager              Lager[]
+  artikel            Artikel[]
+  geraete            Geraet[]
+  kostenplaene       Kostenplan[]
+  sitzungen          Sitzung[]
+  apiSchluessel      ApiSchluessel[]
+  zeiten             Zeiteintrag[]
+  logbuch            LogbuchEintrag[]
+  postfaecher        Postfach[]
+  emails             Email[]
+  aufgaben           Aufgabe[]
+  rechnungen         Rechnung[]
+  telefonAgent       TelefonAgent?
+  gespraeche         Gespraech[]
+  termine            Termin[]
+  kanalZugaenge      KanalZugang[]
+  buchhaltung        Json? // DATEV-Nummern, Konten (SKR03), Mahnregeln
+  zahlungen          Zahlung[]
+  bankumsaetze       Bankumsatz[]
+  mahnungen          Mahnung[]
+  bestellungen       Bestellung[]
+  eingangsrechnungen Eingangsrechnung[]
 }
 
 model Benutzer {
@@ -116,7 +118,7 @@ model Benutzer {
   zugriffe                  Zugriff[]
   sitzungen                 Sitzung[]
   logbuch                   LogbuchEintrag[]
-  projekte                  Projekt[]         @relation("Verantwortlich")
+  projekte                  Projekt[]          @relation("Verantwortlich")
   angebote                  Angebot[]
   apiSchluessel             ApiSchluessel[]
   lagerBuchungen            LagerBuchung[]
@@ -124,18 +126,22 @@ model Benutzer {
   geraetEinsaetze           GeraetEinsatz[]
   postfaecher               Postfach[]
   postfachZugriffe          PostfachZugriff[]
-  aufgabenZustaendig        Aufgabe[]         @relation("AufgabeZustaendig")
-  aufgabenErstellt          Aufgabe[]         @relation("AufgabeErsteller")
-  zeiten                    Zeiteintrag[]     @relation("ZeitMitarbeiter")
-  zeitenErfasst             Zeiteintrag[]     @relation("ZeitErfasser")
-  zeitenFreigabe            Zeiteintrag[]     @relation("ZeitFreigabe")
-  rechnungenErstellt        Rechnung[]        @relation("RechnungErsteller")
-  rechnungenFestgeschrieben Rechnung[]        @relation("RechnungFestschreiber")
+  aufgabenZustaendig        Aufgabe[]          @relation("AufgabeZustaendig")
+  aufgabenErstellt          Aufgabe[]          @relation("AufgabeErsteller")
+  zeiten                    Zeiteintrag[]      @relation("ZeitMitarbeiter")
+  zeitenErfasst             Zeiteintrag[]      @relation("ZeitErfasser")
+  zeitenFreigabe            Zeiteintrag[]      @relation("ZeitFreigabe")
+  rechnungenErstellt        Rechnung[]         @relation("RechnungErsteller")
+  rechnungenFestgeschrieben Rechnung[]         @relation("RechnungFestschreiber")
   termine                   Termin[]
   gespraecheZustaendig      Gespraech[]
   agentStandard             TelefonAgent[]
   zahlungenErfasst          Zahlung[]
   mahnungenErstellt         Mahnung[]
+  bestellungenErstellt      Bestellung[]       @relation("BestellungErsteller")
+  bestellungenBestellt      Bestellung[]       @relation("BestellungBesteller")
+  wareneingaenge            Wareneingang[]
+  eingangsFreigaben         Eingangsrechnung[] @relation("EingangFreigabe")
 }
 
 model Zugriff {
@@ -188,6 +194,9 @@ model Kontakt {
   termine    Termin[]
 
   ustId String? // für § 13b und XRechnung
+
+  bestellungen       Bestellung[]
+  eingangsrechnungen Eingangsrechnung[]
 
   @@index([nachname])
   @@index([firmenname])
@@ -306,6 +315,9 @@ model Projekt {
 
   gespraeche Gespraech[]
   termine    Termin[]
+
+  bestellungen       Bestellung[]
+  eingangsrechnungen Eingangsrechnung[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -513,6 +525,8 @@ model Lager {
   zugaenge  LagerBuchung[] @relation("NachLager")
   geraete   Geraet[]
 
+  bestellungen Bestellung[]
+
   @@unique([firmaId, name])
 }
 
@@ -533,6 +547,8 @@ model Artikel {
   firma          Firma          @relation(fields: [firmaId], references: [id], onDelete: Cascade)
   bestaende      Bestand[]
   buchungen      LagerBuchung[]
+
+  bestellPositionen BestellPosition[]
 
   @@unique([firmaId, nummer])
 }
@@ -567,6 +583,8 @@ model LagerBuchung {
   nachLager   Lager?      @relation("NachLager", fields: [nachLagerId], references: [id])
   projekt     Projekt?    @relation(fields: [projektId], references: [id])
   benutzer    Benutzer?   @relation(fields: [benutzerId], references: [id])
+
+  wareneingangPositionen WareneingangPosition[]
 
   @@index([artikelId, createdAt])
   @@index([projektId])
@@ -803,6 +821,8 @@ model Postfach {
   zugriffe         PostfachZugriff[]
   emails           Email[]
 
+  rechnungseingang Boolean @default(false) // Anhänge (PDF, XML) werden als Eingangsrechnung angelegt
+
   @@unique([firmaId, adresse])
 }
 
@@ -850,6 +870,8 @@ model Email {
   kontakt      Kontakt?      @relation(fields: [kontaktId], references: [id], onDelete: SetNull)
   projekt      Projekt?      @relation(fields: [projektId], references: [id], onDelete: SetNull)
   aufgaben     Aufgabe[]
+
+  eingangsrechnungen Eingangsrechnung[]
 
   @@unique([postfachId, graphId])
   @@index([firmaId, empfangenAm])
@@ -1250,6 +1272,183 @@ model Mahnung {
   firma         Firma     @relation(fields: [firmaId], references: [id], onDelete: Cascade)
   rechnung      Rechnung  @relation(fields: [rechnungId], references: [id])
   erstelltVon   Benutzer? @relation(fields: [erstelltVonId], references: [id], onDelete: SetNull)
+
+  @@index([rechnungId])
+}
+
+// ---------------------------------------------------------------- Einkauf
+// Bestellung → Wareneingang (Lieferschein) → Eingangsrechnung. Die Rechnungsprüfung
+// vergleicht, was bestellt, was geliefert und was berechnet wurde.
+
+enum BestellStatus {
+  ENTWURF // Bestellanforderung, auch von Kolonnen
+  BESTELLT
+  TEILGELIEFERT
+  GELIEFERT
+  ABGESCHLOSSEN
+  STORNIERT
+}
+
+model Bestellung {
+  id             String             @id @default(cuid())
+  firmaId        String
+  nummer         String? // erst beim Bestellen vergeben
+  lieferantId    String?
+  projektId      String?
+  lagerId        String? // Lieferung ins Lager (sonst direkt auf die Baustelle)
+  status         BestellStatus      @default(ENTWURF)
+  betreff        String
+  lieferadresse  String?
+  liefertermin   DateTime?
+  notiz          String?
+  netto          Decimal            @default(0) @db.Decimal(12, 2)
+  bestelltAm     DateTime?
+  erstelltVonId  String?
+  bestelltVonId  String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  firma          Firma              @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  lieferant      Kontakt?           @relation(fields: [lieferantId], references: [id])
+  projekt        Projekt?           @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  lager          Lager?             @relation(fields: [lagerId], references: [id], onDelete: SetNull)
+  erstelltVon    Benutzer?          @relation("BestellungErsteller", fields: [erstelltVonId], references: [id], onDelete: SetNull)
+  bestelltVon    Benutzer?          @relation("BestellungBesteller", fields: [bestelltVonId], references: [id], onDelete: SetNull)
+  positionen     BestellPosition[]
+  wareneingaenge Wareneingang[]
+  rechnungen     Eingangsrechnung[]
+
+  @@index([firmaId, status])
+  @@index([lieferantId])
+}
+
+model BestellPosition {
+  id                  String                 @id @default(cuid())
+  bestellungId        String
+  reihenfolge         Int
+  artikelId           String?
+  artNr               String? // Artikelnummer des Lieferanten
+  text                String
+  menge               Decimal                @db.Decimal(12, 3)
+  einheit             String                 @default("Stk.")
+  preis               Decimal                @default(0) @db.Decimal(12, 4) // EK netto je Einheit
+  geliefert           Decimal                @default(0) @db.Decimal(12, 3)
+  berechnet           Decimal                @default(0) @db.Decimal(12, 3)
+  bestellung          Bestellung             @relation(fields: [bestellungId], references: [id], onDelete: Cascade)
+  artikel             Artikel?               @relation(fields: [artikelId], references: [id], onDelete: SetNull)
+  eingaenge           WareneingangPosition[]
+  rechnungsPositionen EingangsPosition[]
+
+  @@index([bestellungId, reihenfolge])
+}
+
+model Wareneingang {
+  id           String                 @id @default(cuid())
+  bestellungId String
+  datum        DateTime
+  lieferschein String?
+  notiz        String?
+  benutzerId   String?
+  createdAt    DateTime               @default(now())
+  bestellung   Bestellung             @relation(fields: [bestellungId], references: [id], onDelete: Cascade)
+  benutzer     Benutzer?              @relation(fields: [benutzerId], references: [id], onDelete: SetNull)
+  positionen   WareneingangPosition[]
+}
+
+model WareneingangPosition {
+  id                String          @id @default(cuid())
+  wareneingangId    String
+  bestellPositionId String
+  menge             Decimal         @db.Decimal(12, 3)
+  lagerBuchungId    String?
+  wareneingang      Wareneingang    @relation(fields: [wareneingangId], references: [id], onDelete: Cascade)
+  bestellPosition   BestellPosition @relation(fields: [bestellPositionId], references: [id], onDelete: Cascade)
+  lagerBuchung      LagerBuchung?   @relation(fields: [lagerBuchungId], references: [id], onDelete: SetNull)
+}
+
+enum EingangsStatus {
+  NEU // eingegangen, noch nicht geprüft
+  PRUEFUNG // geprüft, wartet auf Freigabe
+  FREIGEGEBEN // zur Zahlung freigegeben
+  ABGELEHNT // reklamiert
+  BEZAHLT
+}
+
+enum Kostenart2 {
+  MATERIAL
+  FREMDLEISTUNG
+  GERAETE
+  SONSTIGES
+}
+
+model Eingangsrechnung {
+  id               String             @id @default(cuid())
+  firmaId          String
+  status           EingangsStatus     @default(NEU)
+  quelle           String // UPLOAD, EMAIL
+  format           String // XRECHNUNG_CII, XRECHNUNG_UBL, ZUGFERD, PDF
+  dateiName        String
+  datei            Bytes
+  dateiHash        String? // SHA-256, erkennt dieselbe Datei aus zwei Postfächern
+  xml              String?
+  daten            Json? // gelesene Angaben nach EN 16931 (BT-…)
+  lieferantId      String?
+  lieferantName    String?
+  lieferantUstId   String?
+  iban             String?
+  rechnungsnummer  String?
+  datum            DateTime?
+  faellig          DateTime?
+  leistungsdatum   String?
+  bestellnummer    String? // Bestellreferenz des Lieferanten (BT-13)
+  netto            Decimal            @default(0) @db.Decimal(12, 2)
+  mwst             Decimal            @default(0) @db.Decimal(12, 2)
+  brutto           Decimal            @default(0) @db.Decimal(12, 2)
+  vorauszahlung    Decimal            @default(0) @db.Decimal(12, 2)
+  zahlbetrag       Decimal            @default(0) @db.Decimal(12, 2)
+  steuerUmkehr     Boolean            @default(false) // § 13b: wir schulden die Steuer
+  skontoProzent    Decimal            @default(0) @db.Decimal(4, 2)
+  skontoTage       Int                @default(0)
+  bestellungId     String?
+  projektId        String?
+  kostenart        Kostenart2         @default(MATERIAL)
+  pruefung         Json? // Ergebnis der automatischen Prüfung
+  freigegebenVonId String?
+  freigegebenAm    DateTime?
+  freigabeNotiz    String?
+  ablehnGrund      String?
+  bezahltAm        DateTime?
+  bezahltBetrag    Decimal?           @db.Decimal(12, 2)
+  emailId          String?
+  notiz            String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  firma            Firma              @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  lieferant        Kontakt?           @relation(fields: [lieferantId], references: [id])
+  bestellung       Bestellung?        @relation(fields: [bestellungId], references: [id], onDelete: SetNull)
+  projekt          Projekt?           @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  freigegebenVon   Benutzer?          @relation("EingangFreigabe", fields: [freigegebenVonId], references: [id], onDelete: SetNull)
+  email            Email?             @relation(fields: [emailId], references: [id], onDelete: SetNull)
+  positionen       EingangsPosition[]
+
+  @@index([firmaId, status])
+  @@index([lieferantId, rechnungsnummer])
+  @@index([firmaId, dateiHash])
+}
+
+model EingangsPosition {
+  id                String           @id @default(cuid())
+  rechnungId        String
+  nr                Int
+  artNr             String?
+  text              String
+  menge             Decimal          @db.Decimal(12, 3)
+  einheit           String?
+  preis             Decimal          @db.Decimal(12, 4)
+  gesamt            Decimal          @db.Decimal(12, 2)
+  steuersatz        Decimal?         @db.Decimal(4, 2)
+  bestellPositionId String?
+  rechnung          Eingangsrechnung @relation(fields: [rechnungId], references: [id], onDelete: Cascade)
+  bestellPosition   BestellPosition? @relation(fields: [bestellPositionId], references: [id], onDelete: SetNull)
 
   @@index([rechnungId])
 }

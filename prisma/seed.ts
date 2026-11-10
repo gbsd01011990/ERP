@@ -38,7 +38,7 @@ async function main() {
     for (const name of TYPEN) {
       await db.projektTyp.upsert({ where: { firmaId_name: { firmaId: firma.id, name } }, update: {}, create: { firmaId: firma.id, name } });
     }
-    for (const art of ["PROJEKT", "ANGEBOT", "AUFTRAG", "AUFMASS", "LIEFERSCHEIN"]) {
+    for (const art of ["PROJEKT", "ANGEBOT", "AUFTRAG", "AUFMASS", "LIEFERSCHEIN", "BESTELLUNG"]) {
       const praefix = art === "PROJEKT" ? `${f.projektPraefix}-` : `${f.projektPraefix}-${art.slice(0, 2)}-`;
       await db.nummernkreis.upsert({
         where: { firmaId_art: { firmaId: firma.id, art } },

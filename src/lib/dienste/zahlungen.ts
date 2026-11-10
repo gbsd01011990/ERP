@@ -110,15 +110,34 @@ export async function kontoauszugImportieren(b: AktuellerBenutzer, name: string,
   const j = JSON.parse((await python("bank/camt.py", daten)).toString("utf8")) as CamtUmsatz[] | { fehler: string };
   if (!Array.isArray(j)) throw new FachFehler(j.fehler);
   if (!j.length) throw new FachFehler("Keine gebuchten Umsätze gefunden. Erwartet wird ein Kontoauszug im Format CAMT.053.");
-  let neu = 0;
+  let neu = 0, lieferanten = 0;
   for (const u of j) {
     const r = await db.bankumsatz.createMany({
       data: [{ firmaId: b.mandant.id, referenz: u.referenz, buchungstag: tag(u.buchungstag), betrag: u.betrag, name: u.name, iban: u.iban, verwendungszweck: u.verwendungszweck, quelle: name, erledigt: u.betrag <= 0 }],
       skipDuplicates: true,
     });
     neu += r.count;
+    if (r.count && u.betrag < 0 && (await lieferantenzahlungErkennen(b.mandant.id, u))) lieferanten++;
   }
-  return { gelesen: j.length, neu, doppelt: j.length - neu };
+  return { gelesen: j.length, neu, doppelt: j.length - neu, lieferanten };
+}
+
+/**
+ * Zahlungsausgang einer freigegebenen Eingangsrechnung zuordnen: Rechnungsnummer im
+ * Verwendungszweck (oder gleiche IBAN) und Betrag = Zahlbetrag bzw. Zahlbetrag minus Skonto.
+ */
+async function lieferantenzahlungErkennen(firmaId: string, u: CamtUmsatz) {
+  const betrag = -u.betrag;
+  const offen = await db.eingangsrechnung.findMany({ where: { firmaId, status: "FREIGEGEBEN" }, select: { id: true, rechnungsnummer: true, iban: true, zahlbetrag: true, skontoProzent: true } });
+  const zweck = (u.verwendungszweck ?? "").toUpperCase().replace(/[\s.\-_/]/g, "");
+  const passt = (e: (typeof offen)[number]) => {
+    const z = n(e.zahlbetrag), mitSkonto = runden(z - (z * n(e.skontoProzent)) / 100);
+    return Math.abs(betrag - z) < 0.01 || (n(e.skontoProzent) > 0 && Math.abs(betrag - mitSkonto) < 0.01);
+  };
+  const treffer = offen.filter((e) => passt(e) && ((e.rechnungsnummer && zweck.includes(e.rechnungsnummer.toUpperCase().replace(/[\s.\-_/]/g, ""))) || (e.iban && u.iban && e.iban === u.iban.replace(/\s/g, "").toUpperCase())));
+  if (treffer.length !== 1) return false;
+  await db.eingangsrechnung.update({ where: { id: treffer[0].id }, data: { status: "BEZAHLT", bezahltAm: tag(u.buchungstag), bezahltBetrag: betrag } });
+  return true;
 }
 
 export async function abgleichListe(b: AktuellerBenutzer) {
@@ -167,6 +186,9 @@ export const BuchhaltungEingabe = z.object({
   mahnFristTage: z.number().int().min(1).max(60),
   gebuehrStufe2: z.number().min(0).max(100), gebuehrStufe3: z.number().min(0).max(100),
   basiszins: z.number().min(-5).max(20).nullable(),
+  kreditorStart: z.number().int().min(70000).max(99999),
+  kontoWareneingang: z.string().regex(/^\d{4}$/), kontoFremdleistung: z.string().regex(/^\d{4}$/), kontoSonstiges: z.string().regex(/^\d{4}$/),
+  freigabeLimitBuero: z.number().min(0), bestellLimitBuero: z.number().min(0), preisToleranz: z.number().min(0).max(50),
 });
 
 export async function buchhaltungSpeichern(b: AktuellerBenutzer, eingabe: z.input<typeof BuchhaltungEingabe>) {
@@ -270,13 +292,20 @@ export async function mahnungPdf(b: AktuellerBenutzer, id: string) {
 // ------------------------------------------------------------------ DATEV
 
 /** Debitorennummer je Kunde und Firma; wird beim ersten Export vergeben und bleibt. */
-async function debitor(tx: Prisma.TransactionClient, firmaId: string, kontaktId: string, start: number) {
-  const vorhanden = await tx.kontaktFremdId.findUnique({ where: { kontaktId_firmaId_system: { kontaktId, firmaId, system: "DATEV" } } });
+async function debitor(tx: Prisma.TransactionClient, firmaId: string, kontaktId: string, start: number, system = "DATEV") {
+  const vorhanden = await tx.kontaktFremdId.findUnique({ where: { kontaktId_firmaId_system: { kontaktId, firmaId, system } } });
   if (vorhanden) return vorhanden.fremdId;
-  const alle = await tx.kontaktFremdId.findMany({ where: { firmaId, system: "DATEV" }, select: { fremdId: true } });
+  const alle = await tx.kontaktFremdId.findMany({ where: { firmaId, system }, select: { fremdId: true } });
   const nr = String(Math.max(start - 1, ...alle.map((a) => Number(a.fremdId)).filter(Number.isFinite)) + 1);
-  await tx.kontaktFremdId.create({ data: { kontaktId, firmaId, system: "DATEV", fremdId: nr } });
+  await tx.kontaktFremdId.create({ data: { kontaktId, firmaId, system, fremdId: nr } });
   return nr;
+}
+
+/** BU-Schlüssel für Eingangsrechnungen: 9 = 19 % Vorsteuer, 8 = 7 %, 94 = § 13b (19 %). */
+function buSchluessel(r: { steuerUmkehr: boolean; netto: Prisma.Decimal; mwst: Prisma.Decimal }) {
+  if (r.steuerUmkehr) return "94";
+  const satz = n(r.netto) ? Math.round((n(r.mwst) / n(r.netto)) * 100) : 0;
+  return satz >= 18 ? "9" : satz >= 6 ? "8" : "";
 }
 
 /**
@@ -294,10 +323,13 @@ export async function datevExport(b: AktuellerBenutzer, von: string, bis: string
   if (bis >= wjEnde) throw new FachFehler("Der Zeitraum muss in einem Wirtschaftsjahr liegen.");
   const ab = berlinZuUtc(von), bisEx = berlinZuUtc(bis, "23:59");
 
-  const [rechnungen, zahlungen] = await Promise.all([
+  const [rechnungen, zahlungen, eingaenge, bezahlteEingaenge] = await Promise.all([
     db.rechnung.findMany({ where: { firmaId: b.mandant.id, status: { not: "ENTWURF" }, datum: { gte: ab, lte: bisEx } }, include: { projekt: { include: { kontakt: { include: { adressen: true } } } } }, orderBy: [{ datum: "asc" }, { nummer: "asc" }] }),
     db.zahlung.findMany({ where: { firmaId: b.mandant.id, datum: { gte: ab, lte: bisEx } }, include: { rechnung: { include: { projekt: { include: { kontakt: true } } } } }, orderBy: { datum: "asc" } }),
+    db.eingangsrechnung.findMany({ where: { firmaId: b.mandant.id, status: { in: ["FREIGEGEBEN", "BEZAHLT"] }, datum: { gte: ab, lte: bisEx }, lieferantId: { not: null } }, include: { lieferant: { include: { adressen: true } } }, omit: { datei: true, xml: true, daten: true }, orderBy: { datum: "asc" } }),
+    db.eingangsrechnung.findMany({ where: { firmaId: b.mandant.id, status: "BEZAHLT", bezahltAm: { gte: ab, lte: bisEx }, lieferantId: { not: null } }, include: { lieferant: true }, omit: { datei: true, xml: true, daten: true }, orderBy: { bezahltAm: "asc" } }),
   ]);
+  const kreditoren = new Map<string, { nr: string; k: NonNullable<(typeof eingaenge)[number]["lieferant"]> }>();
 
   const buchungen: Buchung[] = [];
   const debitoren = new Map<string, { nr: string; k: (typeof rechnungen)[number]["projekt"]["kontakt"] | (typeof zahlungen)[number]["rechnung"]["projekt"]["kontakt"] }>();
@@ -319,6 +351,20 @@ export async function datevExport(b: AktuellerBenutzer, von: string, bis: string
       const konto = z.art === "BAR" ? bh.kontoKasse : z.art === "SKONTO" ? bh.kontoSkonto : z.art === "AUSBUCHUNG" ? bh.kontoAusbuchung : bh.kontoBank;
       buchungen.push({ betrag: n(z.betrag), konto, gegenkonto: nr, datum: z.datum, beleg: z.rechnung.nummer ?? "", text: `${z.art === "SKONTO" ? "Skonto" : z.art === "AUSBUCHUNG" ? "Ausbuchung" : "Zahlung"} ${kontaktName(z.rechnung.projekt.kontakt)}` });
     }
+    // Eingangsrechnungen: Aufwand an Kreditor, Zahlung: Kreditor an Bank
+    for (const e of eingaenge) {
+      const nr = await debitor(tx, b.mandant.id, e.lieferantId!, bh.kreditorStart, "DATEV-KREDITOR");
+      kreditoren.set(nr, { nr, k: e.lieferant! });
+      const konto = e.kostenart === "MATERIAL" ? bh.kontoWareneingang : e.kostenart === "FREMDLEISTUNG" ? bh.kontoFremdleistung : bh.kontoSonstiges;
+      // § 13b: Rechnungsbetrag ist netto; die Steuer bucht DATEV über den BU-Schlüssel selbst
+      buchungen.push({ betrag: n(e.brutto), konto, gegenkonto: nr, datum: e.datum!, beleg: (e.rechnungsnummer ?? "").slice(0, 36), text: `ER ${e.lieferantName ?? kontaktName(e.lieferant!)}`, bu: buSchluessel(e) });
+    }
+    for (const e of bezahlteEingaenge) {
+      const nr = await debitor(tx, b.mandant.id, e.lieferantId!, bh.kreditorStart, "DATEV-KREDITOR");
+      buchungen.push({ betrag: n(e.bezahltBetrag ?? e.zahlbetrag), konto: nr, gegenkonto: bh.kontoBank, datum: e.bezahltAm!, beleg: (e.rechnungsnummer ?? "").slice(0, 36), text: `Zahlung an ${e.lieferantName ?? kontaktName(e.lieferant!)}` });
+      const skonto = runden(n(e.zahlbetrag) - n(e.bezahltBetrag ?? e.zahlbetrag));
+      if (skonto > 0.005) buchungen.push({ betrag: skonto, konto: nr, gegenkonto: "3736", datum: e.bezahltAm!, beleg: (e.rechnungsnummer ?? "").slice(0, 36), text: `Skonto ${e.lieferantName ?? ""}`.trim() });
+    }
   });
 
   const kompakt = (s: string) => s.replace(/-/g, "");
@@ -333,13 +379,24 @@ export async function datevExport(b: AktuellerBenutzer, von: string, bis: string
       return [nr, k.nachname ?? "", k.vorname ?? "", k.firmenname ?? "", a?.strasse ?? "", a?.plz ?? "", a?.ort ?? "", k.email ?? "", k.nummer ?? ""].map((v) => `"${String(v).replace(/"/g, "'")}"`).join(";");
     })].join("\r\n") + "\r\n";
 
+  const kredCsv = ["Konto;Firma;Straße;PLZ;Ort;USt-IdNr.;E-Mail",
+    ...[...kreditoren.values()].sort((a, c) => a.nr.localeCompare(c.nr)).map(({ nr, k }) => {
+      const a = k.adressen.find((x) => x.art === "HAUPT") ?? k.adressen[0];
+      return [nr, k.firmenname ?? kontaktName(k), a?.strasse ?? "", a?.plz ?? "", a?.ort ?? "", k.ustId ?? "", k.email ?? ""].map((v) => `"${String(v).replace(/"/g, "'")}"`).join(";");
+    })].join("\r\n") + "\r\n";
+  const eingangsbelege = await db.eingangsrechnung.findMany({ where: { id: { in: eingaenge.map((e) => e.id) } }, select: { id: true, rechnungsnummer: true, lieferantName: true, dateiName: true, datei: true } });
   const pdfs = await db.rechnung.findMany({ where: { id: { in: rechnungen.map((r) => r.id) } }, select: { nummer: true, art: true, pdf: true } });
   const name = `DATEV_${b.mandant.kuerzel}_${von}_${bis}`;
   const dateien = [
     { name: `EXTF_Buchungsstapel_${b.mandant.kuerzel}_${kompakt(von)}_${kompakt(bis)}.csv`, daten: alsAnsi(csv).toString("base64") },
     { name: "Debitoren.csv", daten: alsAnsi(debCsv).toString("base64") },
     ...pdfs.filter((p) => p.pdf).map((p) => ({ name: `Belege/${ART_TITEL[p.art].replace(/\s/g, "_")}_${p.nummer}.pdf`, daten: Buffer.from(p.pdf!).toString("base64") })),
+    ...(kreditoren.size ? [{ name: "Kreditoren.csv", daten: alsAnsi(kredCsv).toString("base64") }] : []),
+    ...eingangsbelege.map((e) => ({
+      name: `Eingangsbelege/${`${e.lieferantName ?? "Lieferant"}_${e.rechnungsnummer ?? e.id}`.replace(/[^\wäöüÄÖÜß.-]+/g, "_").slice(0, 80)}${(e.dateiName.match(/\.[a-z0-9]+$/i) ?? [".pdf"])[0]}`,
+      daten: Buffer.from(e.datei).toString("base64"),
+    })),
   ];
   const zip = await python("bank/zip.py", JSON.stringify(dateien));
-  return { name: `${name}.zip`, zip, rechnungen: rechnungen.length, zahlungen: zahlungen.length };
+  return { name: `${name}.zip`, zip, rechnungen: rechnungen.length, zahlungen: zahlungen.length, eingangsrechnungen: eingaenge.length };
 }

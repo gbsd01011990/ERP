@@ -23,6 +23,15 @@ export default async function Buchhaltung() {
         <div><label className="label">Erste Debitorennummer</label><input name="debitorStart" defaultValue={bh.debitorStart} className="eingabe" /></div>
         <h2 className="pt-2 font-semibold md:col-span-4">Konten (SKR03)</h2>
         {KONTEN.map(([k, l]) => <div key={k}><label className="label">{l}</label><input name={k} defaultValue={bh[k]} className="eingabe" /></div>)}
+        <h2 className="pt-2 font-semibold md:col-span-4">Einkauf und Eingangsrechnungen</h2>
+        <div><label className="label">Erste Kreditorennummer</label><input name="kreditorStart" defaultValue={bh.kreditorStart} className="eingabe" /></div>
+        <div><label className="label">Wareneingang (Material)</label><input name="kontoWareneingang" defaultValue={bh.kontoWareneingang} className="eingabe" /></div>
+        <div><label className="label">Fremdleistungen</label><input name="kontoFremdleistung" defaultValue={bh.kontoFremdleistung} className="eingabe" /></div>
+        <div><label className="label">Geräte und Sonstiges</label><input name="kontoSonstiges" defaultValue={bh.kontoSonstiges} className="eingabe" /></div>
+        <div><label className="label">Büro darf bestellen bis € netto</label><input name="bestellLimitBuero" defaultValue={z(bh.bestellLimitBuero)} className="eingabe" /></div>
+        <div><label className="label">Büro darf Rechnungen freigeben bis € brutto</label><input name="freigabeLimitBuero" defaultValue={z(bh.freigabeLimitBuero)} className="eingabe" /></div>
+        <div><label className="label">Preistoleranz gegenüber Bestellung %</label><input name="preisToleranz" defaultValue={z(bh.preisToleranz)} className="eingabe" /></div>
+        <p className="text-xs text-slate-500 md:col-span-4">Darüber entscheidet ein Admin. Eingangsrechnungen bucht der DATEV-Export mit BU-Schlüssel 9 (19 % Vorsteuer), 8 (7 %) bzw. 94 (§ 13b) auf diese Konten gegen den Kreditor.</p>
         <h2 className="pt-2 font-semibold md:col-span-4">Mahnwesen</h2>
         <div><label className="label">Zahlungsfrist in Mahnungen (Tage)</label><input name="mahnFristTage" defaultValue={bh.mahnFristTage} className="eingabe" /></div>
         <div><label className="label">Gebühr 1. Mahnung €</label><input name="gebuehrStufe2" defaultValue={z(bh.gebuehrStufe2)} className="eingabe" /></div>

@@ -14,6 +14,8 @@ import { anfrageAnlegen, aufgabeSpeichern, aufgabeErledigt, aufgabeVerschieben, 
 import { ladeAngebot } from "@/lib/angebot";
 import { belegDaten, pdfErzeugen } from "@/lib/pdf";
 import { angebotVersendet } from "../angebote/actions";
+import { bestellungLaden } from "@/lib/dienste/einkauf";
+import { bestellungPdf } from "@/lib/einkauf/pdf";
 
 type Ergebnis = { fehler?: string; ok?: string; zeit: number } | null;
 const fehlerText = (e: unknown) =>
@@ -43,6 +45,11 @@ export async function sendenAktion(_: unknown, form: FormData): Promise<Ergebnis
       if (!a) throw new FachFehler("Angebot nicht gefunden.");
       const daten = belegDaten(a);
       anhaenge.push({ name: `${daten.dokumentart}_${daten.belegnummer}.pdf`, typ: "application/pdf", daten: await pdfErzeugen(daten) });
+    }
+    const bestellungId = text(form, "bestellungId");
+    if (bestellungId && form.get("bestellungAnhaengen") === "on") {
+      const x = await bestellungLaden(b, bestellungId);
+      anhaenge.push({ name: `Bestellung_${x.nummer}.pdf`, typ: "application/pdf", daten: await bestellungPdf(x) });
     }
     for (const f of form.getAll("dateien")) {
       if (f instanceof File && f.size > 0) anhaenge.push({ name: f.name, typ: f.type || "application/octet-stream", daten: Buffer.from(await f.arrayBuffer()) });
@@ -166,7 +173,7 @@ export async function postfachAktion(_: unknown, form: FormData): Promise<Ergebn
     const p = await postfachSpeichern(b, text(form, "id"), {
       art: z.enum(["PERSOENLICH", "GETEILT"]).parse(form.get("art")),
       adresse: String(form.get("adresse") ?? ""), name: text(form, "name"), benutzerId: text(form, "benutzerId"),
-      zugriffe: form.getAll("zugriffe").map(String),
+      zugriffe: form.getAll("zugriffe").map(String), rechnungseingang: form.get("rechnungseingang") === "on",
     });
     revalidatePath("/einstellungen/postfaecher");
     // Erster Abruf gleich im Anschluss, Fehler zeigt die Postfachliste

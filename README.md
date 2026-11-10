@@ -113,7 +113,24 @@ Rechnungen (je Mandant eigener Nummernkreis, eigenes Design):
   Schlussrechnung; Storno und Gutschriften als Gutschrift (381); Skonto in der XRechnung-Schreibweise.
   Jeder Push prüft neun typische Fälle mit dem amtlichen KoSIT-Validator (GitHub Actions, Job „erechnung“).
   Verkäuferdaten je Firma in `src/lib/faktura/stammdaten.ts`.
-- Noch nicht: GAEB X89, Eingangsrechnungen, Empfang von E-Rechnungen.
+- Noch nicht: GAEB X89.
+
+Einkauf (Bestellung → Wareneingang → Eingangsrechnung → Prüfung → Freigabe → Zahlung):
+
+- **Bestellen**: Kolonnen und Büro legen Bestellanforderungen an (im Projekt, im Einkauf oder als
+  Bestellvorschlag aus dem Lager unter Mindestbestand). Material und Fremdleistung lassen sich direkt aus der
+  Auftragsbestätigung übernehmen. Das Büro löst die Bestellung aus (Nummernkreis BESTELLUNG, Wertgrenze
+  einstellbar, darüber ein Admin) und schickt sie als PDF im CD per E-Mail.
+- **Wareneingang** je Lieferschein, auch Teillieferungen; Lagerartikel gehen mit dem Bestellpreis ins Lager.
+- **Eingangsrechnungen**: Upload oder automatisch aus einem Postfach mit „Rechnungseingang“ (z. B. rechnung@).
+  XRechnung (CII und UBL) und ZUGFeRD werden gelesen (factur-x), reine PDFs von Hand erfasst. Lieferant über
+  USt-IdNr., IBAN oder Name, Bestellung über die Bestellnummer in der Rechnung.
+- **Rechnungsprüfung** automatisch: Pflichtangaben (§ 14 UStG), Rechenweg, Dreiweg-Abgleich (berechnet ≤ geliefert
+  ≤ bestellt, Preis höchstens wie bestellt plus Toleranz), doppelte Rechnung, geänderte Bankverbindung.
+- **Freigabe**: Büro bis zur Freigabegrenze und ohne Fehler; Fehler übergehen nur ein Admin mit Begründung.
+  Ablehnen mit Reklamationsgrund. Zahlungsausgänge im Kontoauszug setzen die Rechnung auf bezahlt.
+- Freigegebene Rechnungen fließen in die Nachkalkulation (Material, Fremdleistung, Geräte) und in den
+  DATEV-Export (Aufwandskonto an Kreditor ab 70000 mit BU-Schlüssel, Zahlung, Kreditorenliste, Belege).
 
 Telefonagent (je Firma eigener Agent; Einrichtung: [deploy/TELEFONAGENT.md](deploy/TELEFONAGENT.md)):
 

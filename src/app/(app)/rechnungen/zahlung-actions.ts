@@ -53,7 +53,7 @@ export async function auszugAktion(_: unknown, f: FormData): Promise<Ergebnis> {
     const datei = f.get("datei");
     if (!(datei instanceof File) || datei.size === 0) throw new FachFehler("Bitte einen Kontoauszug (CAMT.053, XML) auswählen.");
     const r = await d.kontoauszugImportieren(b, datei.name, Buffer.from(await datei.arrayBuffer()));
-    return `${r.gelesen} Umsätze gelesen, ${r.neu} neu${r.doppelt ? `, ${r.doppelt} schon vorhanden` : ""}.`;
+    return `${r.gelesen} Umsätze gelesen, ${r.neu} neu${r.doppelt ? `, ${r.doppelt} schon vorhanden` : ""}${r.lieferanten ? `, ${r.lieferanten} Zahlung(en) an Lieferanten erkannt` : ""}.`;
   }, "/rechnungen/bank");
 }
 
@@ -82,5 +82,7 @@ export async function buchhaltungAktion(_: unknown, f: FormData): Promise<Ergebn
     kontoSkonto: s("kontoSkonto"), kontoBank: s("kontoBank"), kontoKasse: s("kontoKasse"), kontoAusbuchung: s("kontoAusbuchung"),
     mahnFristTage: Math.round(zahl(f, "mahnFristTage", 10)), gebuehrStufe2: zahl(f, "gebuehrStufe2"), gebuehrStufe3: zahl(f, "gebuehrStufe3"),
     basiszins: zahlOderNull(f, "basiszins"),
+    kreditorStart: Math.round(zahl(f, "kreditorStart", 70000)), kontoWareneingang: s("kontoWareneingang"), kontoFremdleistung: s("kontoFremdleistung"), kontoSonstiges: s("kontoSonstiges"),
+    freigabeLimitBuero: zahl(f, "freigabeLimitBuero", 5000), bestellLimitBuero: zahl(f, "bestellLimitBuero", 5000), preisToleranz: zahl(f, "preisToleranz", 2),
   }), "/einstellungen/buchhaltung");
 }

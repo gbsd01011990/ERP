@@ -14,6 +14,9 @@ export type Buchhaltung = {
   kontoErloese19: string; kontoErloese7: string; kontoErloese13b: string; kontoErloeseFrei: string;
   kontoSkonto: string; kontoBank: string; kontoKasse: string; kontoAusbuchung: string;
   mahnFristTage: number; gebuehrStufe2: number; gebuehrStufe3: number; basiszins: number | null;
+  // Einkauf
+  kreditorStart: number; kontoWareneingang: string; kontoFremdleistung: string; kontoSonstiges: string;
+  freigabeLimitBuero: number; bestellLimitBuero: number; preisToleranz: number;
 };
 
 /** Standard SKR03. Die Kanzlei sollte die Konten einmal bestätigen. */
@@ -22,6 +25,8 @@ export const BUCHHALTUNG_STANDARD: Buchhaltung = {
   kontoErloese19: "8400", kontoErloese7: "8300", kontoErloese13b: "8337", kontoErloeseFrei: "8200",
   kontoSkonto: "8736", kontoBank: "1200", kontoKasse: "1000", kontoAusbuchung: "2400",
   mahnFristTage: 10, gebuehrStufe2: 0, gebuehrStufe3: 0, basiszins: null,
+  kreditorStart: 70000, kontoWareneingang: "3200", kontoFremdleistung: "3100", kontoSonstiges: "4900",
+  freigabeLimitBuero: 5000, bestellLimitBuero: 5000, preisToleranz: 2,
 };
 
 export const buchhaltungAus = (json: unknown): Buchhaltung => ({ ...BUCHHALTUNG_STANDARD, ...((json as Partial<Buchhaltung>) ?? {}) });
@@ -118,11 +123,11 @@ export const datevBetrag = (v: number) => Math.abs(v).toFixed(2).replace(".", ",
 export const datevDatum = (d: Date) => { const t = berlinTag(d); return t.slice(8, 10) + t.slice(5, 7); };
 export const datevText = (s: string, max = 60) => `"${s.replace(/"/g, "'").replace(/[\r\n;]+/g, " ").slice(0, max)}"`;
 
-export type Buchung = { betrag: number; konto: string; gegenkonto: string; datum: Date; beleg: string; text: string };
+export type Buchung = { betrag: number; konto: string; gegenkonto: string; datum: Date; beleg: string; text: string; bu?: string };
 
 /** Eine Zeile im Buchungsstapel: Soll/Haben nach Vorzeichen (negativ = Haben, also Umkehrbuchung). */
 export const datevZeile = (b: Buchung) =>
-  [datevBetrag(b.betrag), b.betrag < 0 ? '"H"' : '"S"', '"EUR"', "", "", "", b.konto, b.gegenkonto, "", datevDatum(b.datum), datevText(b.beleg, 36), '""', "", datevText(b.text)].join(";");
+  [datevBetrag(b.betrag), b.betrag < 0 ? '"H"' : '"S"', '"EUR"', "", "", "", b.konto, b.gegenkonto, b.bu ? `"${b.bu}"` : "", datevDatum(b.datum), datevText(b.beleg, 36), '""', "", datevText(b.text)].join(";");
 
 export const DATEV_SPALTEN = [
   "Umsatz (ohne Soll/Haben-Kz)", "Soll/Haben-Kennzeichen", "WKZ Umsatz", "Kurs", "Basis-Umsatz", "WKZ Basis-Umsatz",

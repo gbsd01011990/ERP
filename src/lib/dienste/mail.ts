@@ -6,6 +6,7 @@ import { verschluesseln, entschluesseln } from "../geheim";
 import { appToken, graph, graphPost, postfachPfad, MicrosoftFehler, NACHRICHT_FELDER, type GraphNachricht, type GraphAdresse, type MsZugang } from "../microsoft";
 import { htmlZuText, adresseNormal, textZuHtml, adressenLesen } from "../mailtext";
 import { FachFehler } from "./fehler";
+import { eingangErfassen } from "./einkauf";
 import { rollePruefen } from "./zugriff";
 
 const TEXT_MAX = 50_000;
@@ -58,6 +59,8 @@ export const PostfachEingabe = z.object({
   benutzerId: z.string().nullish(),
   /** Freigaben bei geteilten Postfächern */
   zugriffe: z.array(z.string()).default([]),
+  /** Anhänge als Eingangsrechnung erfassen (z. B. rechnung@) */
+  rechnungseingang: z.boolean().default(false),
 });
 
 /** Admin legt ein Postfach an oder ändert Freigaben. Vorher wird geprüft, ob Microsoft den Zugriff erlaubt. */
@@ -77,7 +80,7 @@ export async function postfachSpeichern(b: AktuellerBenutzer, id: string | null,
     const token = await tokenFuer(b.mandant.id);
     await graph(token, `${postfachPfad(e.adresse)}/mailFolders/inbox?$select=id`); // wirft mit verständlicher Meldung
   }
-  const daten = { art: e.art, adresse: e.adresse, name: e.name?.trim() || null, benutzerId: e.art === "PERSOENLICH" ? e.benutzerId! : null, aktiv: true, fehler: null };
+  const daten = { art: e.art, adresse: e.adresse, name: e.name?.trim() || null, benutzerId: e.art === "PERSOENLICH" ? e.benutzerId! : null, rechnungseingang: e.rechnungseingang, aktiv: true, fehler: null };
   try {
     return await db.$transaction(async (tx) => {
       const p = alt
@@ -206,7 +209,7 @@ async function nachrichtSpeichern(p: Postfach, n: GraphNachricht, ordner: Ordner
   const partner = richtung === "EINGANG" ? [vonAdresse] : [...an, ...cc];
   const kontakt = await kontaktZuAdressen(partner);
   const projektId = await projektFinden(p.firmaId, kontakt?.id ?? null, n.conversationId ?? null);
-  await db.email.create({
+  const neu = await db.email.create({
     data: {
       firmaId: p.firmaId, postfachId: p.id, graphId: n.id, internetId: n.internetMessageId ?? null, konversation: n.conversationId ?? null,
       richtung, betreff: n.subject || "(ohne Betreff)", vonName: n.from?.emailAddress?.name ?? null, vonAdresse, an, cc,
@@ -214,7 +217,30 @@ async function nachrichtSpeichern(p: Postfach, n: GraphNachricht, ordner: Ordner
       empfangenAm, gelesen: !!n.isRead, kontaktId: kontakt?.id ?? null, projektId, zuordnung: kontakt ? "AUTO" : null,
     },
   });
-  return "neu";
+  return { neu };
+}
+
+type GraphAnhang = { "@odata.type"?: string; id: string; name: string; contentType?: string; size?: number; isInline?: boolean; contentBytes?: string };
+
+/** Rechnungseingang: PDF- und XML-Anhänge einer Mail als Eingangsrechnung erfassen. */
+async function anhaengeAlsRechnung(token: string, p: Postfach, emailId: string, graphId: string) {
+  const r: { value: GraphAnhang[] } = await graph(token, `${postfachPfad(p.adresse)}/messages/${encodeURIComponent(graphId)}/attachments`);
+  const dateien = r.value.filter((a) => (a["@odata.type"] ?? "").endsWith("fileAttachment") && !a.isInline && a.contentBytes && /\.(pdf|xml)$/i.test(a.name));
+  // XRechnung und Sicht-PDF kommen oft zusammen: dann reicht das XML
+  const xml = dateien.filter((a) => /\.xml$/i.test(a.name));
+  const auswahl = xml.length ? xml : dateien;
+  let anzahl = 0;
+  for (const a of auswahl) {
+    try {
+      await eingangErfassen(p.firmaId, { name: a.name, daten: Buffer.from(a.contentBytes!, "base64") }, "EMAIL", emailId);
+      anzahl++;
+    } catch (e) {
+      // Keine Rechnung (z. B. AGB als PDF, fremdes XML): Mail bleibt im Posteingang
+      console.warn(`Anhang ${a.name} nicht als Rechnung erfasst: ${(e as Error).message}`);
+    }
+  }
+  if (anzahl) await db.email.update({ where: { id: emailId }, data: { ignoriert: true, zuordnung: "AUTO" } });
+  return anzahl;
 }
 
 /** Ruft Posteingang und Gesendete eines Postfachs ab (Delta-Abfrage: nur Änderungen seit dem letzten Abruf). */
@@ -236,7 +262,11 @@ export async function postfachAbrufen(postfachId: string) {
         });
         for (const n of r.value) {
           const e = await nachrichtSpeichern(p, n, ordner);
-          zaehler[e] = (zaehler[e] ?? 0) + 1;
+          const art = typeof e === "string" ? e : "neu";
+          zaehler[art] = (zaehler[art] ?? 0) + 1;
+          if (typeof e !== "string" && p.rechnungseingang && ordner === "inbox" && n.hasAttachments) {
+            zaehler.rechnungen = (zaehler.rechnungen ?? 0) + (await anhaengeAlsRechnung(token, p, e.neu.id, n.id));
+          }
         }
         url = r["@odata.nextLink"];
         deltaLink = r["@odata.deltaLink"] ?? deltaLink;

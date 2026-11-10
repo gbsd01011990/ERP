@@ -12,6 +12,8 @@ import { AktionsFormular } from "@/components/aktions-formular";
 import { lvImportAktion } from "../../angebote/gaeb-actions";
 import { RechnungNeu } from "@/components/rechnung-neu";
 import { ART_TITEL, STATUS_TEXT } from "@/lib/faktura/texte";
+import { B_STATUS, E_STATUS } from "@/lib/einkauf/texte";
+import { bestellungNeuAktion } from "../../einkauf/actions";
 
 const ART_TEXT = { NOTIZ: "Notiz", ANRUF: "Anruf", EMAIL: "E-Mail", TERMIN: "Termin", STATUS: "Status", SYSTEM: "System" } as const;
 
@@ -29,6 +31,8 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
       logbuch: { orderBy: { createdAt: "desc" }, include: { benutzer: { select: { name: true } } } },
       angebote: { orderBy: [{ createdAt: "asc" }] },
       rechnungen: { orderBy: [{ createdAt: "asc" }], omit: { pdf: true } },
+      bestellungen: { orderBy: [{ createdAt: "desc" }], include: { lieferant: true } },
+      eingangsrechnungen: { orderBy: [{ datum: "desc" }], omit: { datei: true, xml: true, daten: true }, include: { lieferant: true } },
     },
   });
   if (!p || !firmenIds(b).includes(p.firmaId)) notFound();
@@ -144,6 +148,47 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
         </section>
       )}
 
+      <section className="karte space-y-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="font-semibold">Einkauf</h2>
+          <div className="ml-auto flex flex-wrap gap-2">
+            {(() => {
+              const basis = p.angebote.find((a) => a.art === "AUFTRAGSBESTAETIGUNG" && a.status !== "ERSETZT") ?? p.angebote.find((a) => a.status === "ANGENOMMEN");
+              return basis && buero ? (["MATERIAL", "FREMD"] as const).map((art) => (
+                <AktionsFormular key={art} aktion={bestellungNeuAktion} knopf={art === "MATERIAL" ? "Material aus Auftrag bestellen" : "Fremdleistung beauftragen"} knopfKlasse="btn-hell py-1">
+                  <input type="hidden" name="angebotId" value={basis.id} /><input type="hidden" name="art" value={art} />
+                </AktionsFormular>
+              )) : null;
+            })()}
+            <AktionsFormular aktion={bestellungNeuAktion} knopf="+ Bestellanforderung" knopfKlasse="btn-hell py-1" className="flex gap-2">
+              <input type="hidden" name="projektId" value={p.id} /><input name="betreff" required placeholder="Was wird gebraucht?" className="eingabe py-1" aria-label="Was wird gebraucht" />
+            </AktionsFormular>
+          </div>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div>
+            {p.bestellungen.map((x) => (
+              <Link key={x.id} href={`/einkauf/bestellungen/${x.id}`} className="flex gap-2 rounded px-1 py-1 hover:bg-slate-50">
+                <span className="font-medium text-marke">{x.nummer ?? "Anforderung"}</span><span className="truncate">{x.betreff}</span>
+                <span className="text-slate-500">{B_STATUS[x.status]}</span><span className="ml-auto">{euro(x.netto)}</span>
+              </Link>
+            ))}
+            {p.bestellungen.length === 0 && <p className="text-slate-500">Keine Bestellungen.</p>}
+          </div>
+          {buero && (
+            <div>
+              {p.eingangsrechnungen.map((r) => (
+                <Link key={r.id} href={`/einkauf/rechnungen/${r.id}`} className="flex gap-2 rounded px-1 py-1 hover:bg-slate-50">
+                  <span className="font-medium text-marke">{r.lieferant ? kontaktName(r.lieferant) : r.lieferantName}</span><span>{r.rechnungsnummer}</span>
+                  <span className="text-slate-500">{E_STATUS[r.status]}</span><span className="ml-auto">{euro(r.netto)} netto</span>
+                </Link>
+              ))}
+              {p.eingangsrechnungen.length === 0 && <p className="text-slate-500">Keine Eingangsrechnungen.</p>}
+            </div>
+          )}
+        </div>
+      </section>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="karte space-y-3">
           <h2 className="font-semibold">Aufgaben und Wiedervorlagen</h2>
@@ -172,12 +217,12 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      {(nk.soll || nk.entnahmen.length > 0 || nk.einsaetze.length > 0 || nk.istLohnStunden > 0) && (
+      {(nk.soll || nk.entnahmen.length > 0 || nk.einsaetze.length > 0 || nk.istLohnStunden > 0 || nk.eingaenge.length > 0) && (
         <section className="karte overflow-x-auto text-sm">
           <h2 className="mb-1 font-semibold">Nachkalkulation</h2>
           <p className="mb-3 text-xs text-slate-500">
             {nk.basis ? `Soll aus ${nk.basis.art === "ANGEBOT" ? "Angebot" : "Auftragsbestätigung"} ${nk.basis.nummer}${nk.basis.version > 1 ? `-${nk.basis.version}` : ""}` : "Noch kein Angebot als Soll"}
-            {" · Ist aus Zeiterfassung, Lagerentnahmen und Geräteeinsätzen."}
+            {" · Ist aus Zeiterfassung, Lagerentnahmen, Geräteeinsätzen und freigegebenen Eingangsrechnungen (netto)."}
           </p>
           <table className="tabelle max-w-2xl">
             <thead><tr><th>Kostenart</th><th className="text-right">Soll</th><th className="text-right">Ist</th><th className="text-right">Abweichung</th></tr></thead>
@@ -198,7 +243,8 @@ export default async function ProjektSeite({ params }: { params: Promise<{ id: s
                   <td />
                 </tr>
               )}
-              <tr><td>Fremdleistung (EK)</td><td className="text-right">{euro(nk.soll?.fremdEk ?? 0)}</td><td className="text-right text-slate-400">folgt</td><td /></tr>
+              <tr><td>Fremdleistung (EK)</td><td className="text-right">{euro(nk.soll?.fremdEk ?? 0)}</td><td className="text-right">{euro(nk.istFremd)}</td><td className="text-right">{abweichung(nk.soll?.fremdEk ?? 0, nk.istFremd)}</td></tr>
+              {nk.istSonstiges > 0 && <tr><td>Sonstiges (Eingangsrechnungen)</td><td /><td className="text-right">{euro(nk.istSonstiges)}</td><td /></tr>}
             </tbody>
           </table>
           {nk.lohnJeMitarbeiter.length > 0 && (
