@@ -66,6 +66,20 @@ services:
       TZ: Europe/Berlin
     command: ["npm", "run", "mail:abruf"]
 
+  # Ausschreibungs-Radar: täglich ab RADAR_UHRZEIT (Berliner Zeit) öffentliche Ausschreibungen abrufen
+  radar:
+    build:
+      context: ..
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://erp:${DB_PASSWORT}@db:5432/erp
+      RADAR_UHRZEIT: ${RADAR_UHRZEIT:-06:30}
+      TZ: Europe/Berlin
+    command: ["npm", "run", "radar:lauf"]
+
   # HTTPS mit automatischem Let's-Encrypt-Zertifikat (Profil "caddy").
   # Läuft auf dem Server schon ein Webserver auf Port 80/443, COMPOSE_PROFILES leer lassen.
   caddy:

@@ -36,12 +36,18 @@ export default async function Uebersicht() {
     db.artikel.findMany({ where: { firmaId: { in: ids }, aktiv: true, mindestbestand: { not: null } }, include: { bestaende: true } }),
   ]);
   const bisMorgen = berlinZuUtc(tagPlus(berlinTag(new Date()), 1));
-  const [meineAufgaben, offeneMails] = await Promise.all([
+  const buero = b.rolle !== "KOLONNE";
+  const jetzt = new Date();
+  const [meineAufgaben, offeneMails, radarNeu, radarDringend] = await Promise.all([
     db.aufgabe.findMany({
       where: { firmaId: b.mandant.id, zustaendigId: b.id, erledigtAm: null, OR: [{ faelligAm: { lt: bisMorgen } }, { faelligAm: null }] },
       include: aufgabeInclude, orderBy: [{ faelligAm: { sort: "asc", nulls: "last" } }], take: 20,
     }),
     db.email.count({ where: { AND: [await emailFilter(b), { richtung: "EINGANG", kontaktId: null, projektId: null, ignoriert: false }] } }),
+    buero ? db.ausschreibungTreffer.count({ where: { firmaId: b.mandant.id, status: "NEU", ausschreibung: { OR: [{ frist: null }, { frist: { gte: jetzt } }] } } }) : 0,
+    buero
+      ? db.ausschreibungTreffer.count({ where: { firmaId: b.mandant.id, status: { in: ["NEU", "TEILNAHME"] }, ausschreibung: { frist: { gte: jetzt, lte: new Date(jetzt.getTime() + 7 * 864e5) } } } })
+      : 0,
   ]);
   const knapp = mindest
     .map((a) => ({ a, gesamt: a.bestaende.reduce((s, x) => s + n(x.menge), 0) }))
@@ -96,11 +102,22 @@ export default async function Uebersicht() {
           <div className="mb-2 flex items-center"><h2 className="font-semibold">Meine Aufgaben: heute und überfällig</h2><Link href="/aufgaben" className="ml-auto text-sm text-marke">alle</Link></div>
           <AufgabenListe aufgaben={meineAufgaben} leer="Für heute ist nichts offen." />
         </div>
-        <Link href="/posteingang" className="karte block hover:border-marke">
-          <div className="text-sm text-slate-500">Posteingang</div>
-          <div className="text-2xl font-semibold">{offeneMails}</div>
-          <div className="text-sm text-slate-600">nicht zugeordnete E-Mail{offeneMails === 1 ? "" : "s"}</div>
-        </Link>
+        <div className="grid content-start gap-4">
+          <Link href="/posteingang" className="karte block hover:border-marke">
+            <div className="text-sm text-slate-500">Posteingang</div>
+            <div className="text-2xl font-semibold">{offeneMails}</div>
+            <div className="text-sm text-slate-600">nicht zugeordnete E-Mail{offeneMails === 1 ? "" : "s"}</div>
+          </Link>
+          {buero && (
+            <Link href="/ausschreibungen" className="karte block hover:border-marke">
+              <div className="text-sm text-slate-500">Ausschreibungen</div>
+              <div className="text-2xl font-semibold">{radarNeu} neu</div>
+              <div className={`text-sm ${radarDringend ? "font-medium text-red-700" : "text-slate-600"}`}>
+                {radarDringend ? `${radarDringend} mit Frist in den nächsten 7 Tagen` : "keine Frist in den nächsten 7 Tagen"}
+              </div>
+            </Link>
+          )}
+        </div>
       </section>
 
       {(pruefungen.length > 0 || knapp.length > 0) && (

@@ -2,6 +2,8 @@
 // Mehrfach ausführbar: vorhandene Einträge bleiben unverändert.
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 const db = new PrismaClient();
 
@@ -55,6 +57,31 @@ async function main() {
       update: {},
       create: { firmaId: firma.id, art: "RECHNUNG", ...re },
     });
+  }
+
+  // Ausschreibungs-Radar: offene Ausschreibungen aus dem bisherigen, eigenständigen Radar (Riedrich und Dremel)
+  // einmalig übernehmen, solange RD noch keine Treffer im ERP hat.
+  const rd = await db.firma.findUnique({ where: { kuerzel: "RD" } });
+  if (rd && (await db.ausschreibungTreffer.count({ where: { firmaId: rd.id } })) === 0) {
+    const bestand = JSON.parse(readFileSync(path.join(process.cwd(), "radar", "startbestand-rd.json"), "utf8")) as Record<string, {
+      titel: string; auftraggeber?: string; ort?: string; plz?: string; auftragsart?: string; wert?: string; punkte: number; gruende: string[];
+      frist_datum?: string; frist_zeit?: string; portal?: string; bekanntmachung?: string; gemeldet_am?: string; quelle?: string;
+    }>;
+    const berlin = (tag: string, zeit: string) => { const d = new Date(`${tag}T${zeit}:00Z`); const off = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Berlin", hour: "numeric", hourCycle: "h23" }).format(d)) - d.getUTCHours(); return new Date(d.getTime() - ((off + 24) % 24) * 3600e3); };
+    for (const [kennung, e] of Object.entries(bestand)) {
+      const wert = Number((e.wert ?? "").replace(/[^\d]/g, ""));
+      const a = await db.ausschreibung.upsert({
+        where: { kennung }, update: {},
+        create: {
+          kennung, quelle: e.quelle ?? "Datenservice des Bundes", titel: e.titel.slice(0, 500), auftraggeber: e.auftraggeber || null, ort: e.ort || null, plz: e.plz || null,
+          auftragsart: e.auftragsart || null, wert: wert > 0 ? wert : null, cpv: [],
+          frist: e.frist_datum ? berlin(e.frist_datum, e.frist_zeit || "23:59") : null, fristOhneZeit: !!e.frist_datum && !e.frist_zeit,
+          portalUrl: e.portal || null, bekanntmachungUrl: e.bekanntmachung || null, erstGesehen: e.gemeldet_am ? new Date(`${e.gemeldet_am}T06:00:00Z`) : new Date(),
+        },
+      });
+      await db.ausschreibungTreffer.upsert({ where: { ausschreibungId_firmaId: { ausschreibungId: a.id, firmaId: rd.id } }, update: {}, create: { ausschreibungId: a.id, firmaId: rd.id, punkte: e.punkte, gruende: e.gruende } });
+    }
+    console.log(`Radar: ${Object.keys(bestand).length} offene Ausschreibungen aus dem bisherigen Radar übernommen`);
   }
 
   const email = process.env.ADMIN_EMAIL ?? "admin@example.de";

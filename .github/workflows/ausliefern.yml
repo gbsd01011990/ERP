@@ -30,6 +30,7 @@ jobs:
       - run: npx prisma generate
       - run: npx tsc --noEmit
       - run: npm test
+      - run: npm run test:radar
 
   # E-Rechnung: typische Rechnungsfälle als XRechnung erzeugen und mit dem amtlichen
   # KoSIT-Validator (XRechnung 3.0) prüfen. Läuft nur hier, nicht auf dem Server.

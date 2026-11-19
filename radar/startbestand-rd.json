@@ -1,0 +1,981 @@
+{
+ "c8e77598-4910-4e6b-adb9-d40c4115a0d0": {
+  "titel": "Offenes Verfahren (EU-weit) zur Vergabe von Grünpflege- und Grauflächenreinigungsleistungen für 4 Bundesliegenschaften in Berlin, Bundesanstalt für Immobilienaufgaben, Direktion Berlin und Sparte Wohnen, Regionalbereich Ost - VOEK 013-26 -",
+  "auftraggeber": "Bundesanstalt für Immobilienaufgaben",
+  "ort": "Berlin",
+  "plz": "12205, 13581",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 4,
+  "gruende": [
+   "CPV 77314000",
+   "Text: grünfläche, hecke, rasen, spielplatz"
+  ],
+  "frist_datum": "2026-11-19",
+  "frist_zeit": "09:00",
+  "portal": "https://www.evergabe-online.de/tenderdocuments.html?id=895838",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/c8e77598-4910-4e6b-adb9-d40c4115a0d0",
+  "gemeldet_am": "2026-10-07",
+  "quelle": "Datenservice des Bundes"
+ },
+ "b6bacf88-d017-4b56-a56f-48c12a346a6d": {
+  "titel": "Unterhaltungspflege für Außenanlagen und Mulden gemäß DIN 18919 Region Ost",
+  "auftraggeber": "Berliner Wasserbetriebe",
+  "ort": "Berlin",
+  "plz": "10179, divers",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77310000",
+   "Titel: außenanlage"
+  ],
+  "frist_datum": "2026-11-19",
+  "frist_zeit": "10:00",
+  "portal": "https://vergabeplattform.bwb.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-Tender-19fd220324e-5162c7b3bb7a80fb",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/b6bacf88-d017-4b56-a56f-48c12a346a6d",
+  "gemeldet_am": "2026-10-17",
+  "quelle": "Datenservice des Bundes"
+ },
+ "04fcd8d8-06a5-4223-a48c-0acdf55e7a62": {
+  "titel": "Unterhaltungspflege - Kontrollabschnitt 2",
+  "auftraggeber": "Die Autobahn GmbH des Bundes - NL Ost",
+  "ort": "Dahlenwarsleben, Löbejün, Magdeburg, Roßla, Schönebeck",
+  "plz": "06193, 06536, 39104, 39218, 39326",
+  "auftragsart": "services",
+  "wert": "2.325.551 EUR",
+  "punkte": 4,
+  "gruende": [
+   "CPV 77300000, 77340000,77341000,77314000",
+   "Text: hecke"
+  ],
+  "frist_datum": "2026-11-25",
+  "frist_zeit": "10:00",
+  "portal": "https://vergabe.autobahn.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-Tender-1a11b223947-23666448e59ec1c6",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/04fcd8d8-06a5-4223-a48c-0acdf55e7a62",
+  "gemeldet_am": "2026-10-19",
+  "quelle": "Datenservice des Bundes"
+ },
+ "417969e7-e010-4b4a-b37c-bad8fdea75dc": {
+  "titel": "Unterhaltungspflege für Außenanlagen gemäß DIN 18919 Region Süd",
+  "auftraggeber": "Berliner Wasserbetriebe",
+  "ort": "Berlin",
+  "plz": "10179, divers",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77310000",
+   "Titel: außenanlage"
+  ],
+  "frist_datum": "2026-12-01",
+  "frist_zeit": "10:00",
+  "portal": "https://vergabeplattform.bwb.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-Tender-19fd224c967-621b492517559416",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/417969e7-e010-4b4a-b37c-bad8fdea75dc",
+  "gemeldet_am": "2026-10-21",
+  "quelle": "Datenservice des Bundes"
+ },
+ "9d2ea87e-5994-4795-a7ba-5405b4c11e70": {
+  "titel": "Freianlagen 5.4",
+  "auftraggeber": "Vergabestelle",
+  "ort": "Groß Köris",
+  "plz": "15746",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "Titel: freianlage",
+   "Text: hecke, rasen, staude"
+  ],
+  "frist_datum": "2026-11-19",
+  "frist_zeit": "09:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXS0YBUDY6T7AXD9/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/9d2ea87e-5994-4795-a7ba-5405b4c11e70",
+  "gemeldet_am": "2026-10-21",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-211392": {
+  "titel": "Entwicklungs und Unterhaltungspflege von Grünflächen und Winterdienst mit Schneeberäumung und Eisglättebeseitigung in …",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "12053",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: grünfläche, winterdienst"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211392",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211392",
+  "gemeldet_am": "2026-10-21",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "berlin-211311": {
+  "titel": "Garten- und Landschaftsbauarbeiten - Nordpromenade 2. BA",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "10409",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: landschaftsbau"
+  ],
+  "frist_datum": "2026-11-24",
+  "frist_zeit": "11:00",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211311",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211311",
+  "gemeldet_am": "2026-10-21",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "82c8d699-f6b1-464e-b720-2d353141e5cc": {
+  "titel": "Entwicklungs und Unterhaltungspflege von Grünflächen und Winterdienst mit Schneeberäumung und Eisglättebeseitigung in zwei Losen Tempelhof und Neukölln",
+  "auftraggeber": "STADT UND LAND Wohnbauten-Gesellschaft mbH",
+  "ort": "Berlin",
+  "plz": "12053",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77310000",
+   "Titel: grünfläche, winterdienst"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211392",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/82c8d699-f6b1-464e-b720-2d353141e5cc",
+  "gemeldet_am": "2026-10-22",
+  "quelle": "Datenservice des Bundes"
+ },
+ "99237b70-e57f-4a3e-90fe-c33a18bb43ae": {
+  "titel": "Baumfällungen Nordwestlicher Vorplatz",
+  "auftraggeber": "Grün Berlin GmbH",
+  "ort": "Berlin",
+  "plz": "10245",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 6,
+  "gruende": [
+   "CPV 45112700",
+   "Titel: baumfäll",
+   "Text: gehölz"
+  ],
+  "frist_datum": "2026-11-23",
+  "frist_zeit": "13:00",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211261",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/99237b70-e57f-4a3e-90fe-c33a18bb43ae",
+  "gemeldet_am": "2026-10-23",
+  "quelle": "Datenservice des Bundes"
+ },
+ "c5b9f048-80f1-4e44-83b2-a1f221214d6d": {
+  "titel": "Rootbuchen-Saat",
+  "auftraggeber": "Landesbetrieb Forst Brandenburg - Vergabemanagement Standort Eberswalde",
+  "ort": "Eberswalde",
+  "plz": "16225",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 77211600"
+  ],
+  "frist_datum": "2026-11-24",
+  "frist_zeit": "10:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXVPYYDDYH0AQMLG/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/c5b9f048-80f1-4e44-83b2-a1f221214d6d",
+  "gemeldet_am": "2026-10-23",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-211261": {
+  "titel": "Baumfällungen Nordwestlicher Vorplatz",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "10245",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: baumfäll"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211261",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211261",
+  "gemeldet_am": "2026-10-24",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "1c446cb8-e83b-4a1a-9a61-a868bbf636f0": {
+  "titel": "Planting of Seagrass for Ostwind 3 Offshore project between KP18.1-18.4",
+  "auftraggeber": "50Hertz Offshore GmbH",
+  "ort": "Berlin",
+  "plz": "10557",
+  "auftragsart": "services",
+  "wert": "800.000 EUR",
+  "punkte": 3,
+  "gruende": [
+   "CPV 77310000"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://eliagroup.sharepoint.com/:f:/s/EFSS/EFSS/IgAt3bXEzMXASI9Efjks2a1iAfM3v7ngk5soTrbyrcxF2PI?e=oijszZ",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/1c446cb8-e83b-4a1a-9a61-a868bbf636f0",
+  "gemeldet_am": "2026-10-26",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-211310": {
+  "titel": "Bauüberwachung der Pflege- und Reinigungsarbeiten von GaLaBau-Firmen",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "12489",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: galabau"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211310",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211310",
+  "gemeldet_am": "2026-10-27",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "berlin-211317": {
+  "titel": "Grünflächen-Pflegemaßnahmen im Entwicklungsbereich Berlin-Adlershof",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "12489",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: grünfläche"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211317",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211317",
+  "gemeldet_am": "2026-10-27",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "berlin-211091": {
+  "titel": "Grünflächenpflege sowie Grün- und Grauflächenreinigung IB-K2",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "13187",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: grünfläche"
+  ],
+  "frist_datum": "2026-11-24",
+  "frist_zeit": "10:00",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211091",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211091",
+  "gemeldet_am": "2026-10-27",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "berlin-210376": {
+  "titel": "Rahmenvertrag Bauleistungen Garten, Landschafts und Sportplatzbau",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "12681",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: sportplatz"
+  ],
+  "frist_datum": "2026-11-26",
+  "frist_zeit": "10:00",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/210376",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-210376",
+  "gemeldet_am": "2026-10-27",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "0097cf91-f700-4131-88f4-c426ba54c413": {
+  "titel": "Bauüberwachung der Pflege- und Reinigungsarbeiten von GaLaBau-Firmen",
+  "auftraggeber": "WISTA.Plan GmbH",
+  "ort": "Berlin",
+  "plz": "12489",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77300000, 77314000",
+   "Titel: galabau"
+  ],
+  "frist_datum": "2026-11-26",
+  "frist_zeit": "13:30",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211310",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/0097cf91-f700-4131-88f4-c426ba54c413",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Datenservice des Bundes"
+ },
+ "25973682": {
+  "titel": "Gruenflaechenpflege sowie Gruen- und Grauflaechenreinigung IB-K2",
+  "auftraggeber": "GESOBAU AG",
+  "ort": "13187 Berlin",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77314000-4",
+   "Titel: gruenflaeche"
+  ],
+  "frist_datum": "2026-11-24",
+  "frist_zeit": "10:00",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211091",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25973682",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Datenservice des Bundes"
+ },
+ "182379ec-1027-46d1-b73d-6041e3b4786a": {
+  "titel": "Grünflächen-Pflegemaßnahmen im Entwicklungsbereich Berlin-Adlershof",
+  "auftraggeber": "WISTA.Plan GmbH",
+  "ort": "Berlin",
+  "plz": "12489",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77300000, 77314000",
+   "Titel: grünfläche"
+  ],
+  "frist_datum": "2026-11-26",
+  "frist_zeit": "13:30",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211317",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/182379ec-1027-46d1-b73d-6041e3b4786a",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Datenservice des Bundes"
+ },
+ "4299174a-6318-421e-a3ba-485d15b42395": {
+  "titel": "Havelland-Kaserne Potsdam, Neubau Unterkunftsgebäude 1, Ersatzpflanzungen",
+  "auftraggeber": "Brandenburgischer Landesbetrieb für Liegenschaften und Bauen (BLB) - Zentrale Vergabestelle",
+  "ort": "Potsdam",
+  "plz": "14469",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 4,
+  "gruende": [
+   "CPV 45112000, 45112700",
+   "Text: pflanzarbeit"
+  ],
+  "frist_datum": "2026-12-09",
+  "frist_zeit": "09:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXSEYYDDYH3KTSNT/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/4299174a-6318-421e-a3ba-485d15b42395",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Datenservice des Bundes"
+ },
+ "f711e8d4-bcb1-49a2-b84d-f916f907c536": {
+  "titel": "Havelland-Kaserne Potsdam, Neubau Unterkunftsgebäude 1, Verkehrsanlagen/Außenanlagen",
+  "auftraggeber": "Brandenburgischer Landesbetrieb für Liegenschaften und Bauen (BLB) - Zentrale Vergabestelle",
+  "ort": "Potsdam",
+  "plz": "14469",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: außenanlage"
+  ],
+  "frist_datum": "2026-12-09",
+  "frist_zeit": "09:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXSEYYDDYHKM9ERY/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/f711e8d4-bcb1-49a2-b84d-f916f907c536",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Datenservice des Bundes"
+ },
+ "25973678": {
+  "titel": "Rahmenvertrag Bauleistungen Garten, Landschafts und Sportplatzbau",
+  "auftraggeber": "Bezirksamt Marzahn-Hellersdorf von Berlin",
+  "ort": "12681 Berlin",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: sportplatz"
+  ],
+  "frist_datum": "2026-11-26",
+  "frist_zeit": "10:00",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/210376",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25973678",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-211728": {
+  "titel": "Schwammschulhöfe - Vorplanung Freianlagen - LPh 1 und 2 HOAI",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "10713",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: freianlage"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211728",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211728",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "25970916": {
+  "titel": "V367_2026 Grünflächenpflege",
+  "auftraggeber": "Helmholtz-Zentrum Berlin für Materialien und Energie GmbH (HZB)",
+  "ort": "14109 Berlin",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: grünfläche"
+  ],
+  "frist_datum": "2026-11-23",
+  "frist_zeit": "09:00",
+  "portal": "https://www.subreport-elvis.de/download/bund/E53344392/1793025762277/bekanntmachung.pdf",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25970916",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Datenservice des Bundes"
+ },
+ "25973202": {
+  "titel": "V367_2026 Grünflächenpflege",
+  "auftraggeber": "Helmholtz-Zentrum Berlin für Materialien und Energie GmbH (HZB)",
+  "ort": "12489 Berlin",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: grünfläche"
+  ],
+  "frist_datum": "2026-11-23",
+  "frist_zeit": "09:00",
+  "portal": "https://www.subreport-elvis.de/download/bund/E53344392/1793025762277/bekanntmachung.pdf",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25973202",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-211727": {
+  "titel": "Ökologischere Aufwertung von Straßenbegleitgrün\nAlt-Friedrichsfelde\nLandschaftsbauarbeiten - Pflanzen",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "10319",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: landschaftsbau"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211727",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211727",
+  "gemeldet_am": "2026-10-28",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "25975396": {
+  "titel": "Rahmenvertrag Baumarbeiten PR I; PR II; Caputh; Paretz; Sacrow:",
+  "auftraggeber": "Stiftung Preußische Schlösser und Gärten Berlin-Brandenburg",
+  "ort": "14469 Potsdam",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 45112700-2"
+  ],
+  "frist_datum": "2026-11-25",
+  "frist_zeit": "08:30",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXURYYDDYHKRLBRX",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25975396",
+  "gemeldet_am": "2026-10-29",
+  "quelle": "Datenservice des Bundes"
+ },
+ "edd7f67d-ef65-4c01-8d1c-2f02499ec420": {
+  "titel": "Winterdienst im Sicherheitsbereich",
+  "auftraggeber": "Flughafen Berlin Brandenburg GmbH",
+  "ort": "Berlin",
+  "plz": "12529",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: winterdienst"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://vergabekooperation.berlin/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-Tender-1a15e95455e-714430109599a342",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/edd7f67d-ef65-4c01-8d1c-2f02499ec420",
+  "gemeldet_am": "2026-10-29",
+  "quelle": "Datenservice des Bundes"
+ },
+ "47787202-f54f-470c-a67e-e73b076d06df": {
+  "titel": "Erd-, Verbau-, Entwässerungskanal-, Verkehrswege-, Landschaftsbauarbeiten nach DIN 18300; 18303; 18306; 18318; 18320 - 2874/2026",
+  "auftraggeber": "Bundesamt für Bauwesen und Raumordnung, in Vertretung für die BImA",
+  "ort": "Berlin",
+  "plz": "10623",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "Titel: landschaftsbau",
+   "Text: außenanlage, wegebau"
+  ],
+  "frist_datum": "2026-11-19",
+  "frist_zeit": "11:00",
+  "portal": "https://www.evergabe-online.de/tenderdetails.html?id=903072",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/47787202-f54f-470c-a67e-e73b076d06df",
+  "gemeldet_am": "2026-10-30",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-210892": {
+  "titel": "Freianlagen - MEB22 Aziz-Nesin-Grundschule",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "10707",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: freianlage"
+  ],
+  "frist_datum": "2026-11-30",
+  "frist_zeit": "13:30",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/210892",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-210892",
+  "gemeldet_am": "2026-10-30",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "25987736": {
+  "titel": "Freianlagen - MEB22 Aziz-Nesin-Grundschule",
+  "auftraggeber": "Senatsverwaltung fuer Stadtentwicklung, Bauen und Wohnen",
+  "ort": "10707 Berlin",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 45112700-2",
+   "Titel: freianlage"
+  ],
+  "frist_datum": "2026-11-30",
+  "frist_zeit": "13:30",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/210892",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25987736",
+  "gemeldet_am": "2026-10-31",
+  "quelle": "Datenservice des Bundes"
+ },
+ "25984400": {
+  "titel": "Unterhaltspflege kommunaler Grünanlagen",
+  "auftraggeber": "Stadt Forst (Lausitz), Die Bürgermeisterin, Fachbereich Bauverwaltung",
+  "ort": "03149 Forst (Lausitz)",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77310000-6",
+   "Titel: grünanlage"
+  ],
+  "frist_datum": "2026-11-19",
+  "frist_zeit": "10:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXVHYH1DYHGW2352",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25984400",
+  "gemeldet_am": "2026-10-31",
+  "quelle": "Datenservice des Bundes"
+ },
+ "b865bdec-891f-4f0a-849b-17e5565cb5a4": {
+  "titel": "Neubau von vier Gebäuden für studentisches Wohnen, Rote Kaserne West WA8, Georg-Hermann-Alle 105 14469 Potsdam - Dachdeckerarbeiten",
+  "auftraggeber": "ProPotsdam GmbH",
+  "ort": "Potsdam",
+  "plz": "14469",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 45112713,45261300,45261410,45261420,45261900"
+  ],
+  "frist_datum": "2026-12-03",
+  "frist_zeit": "10:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXT8YYRDYHUY7RWQ/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/b865bdec-891f-4f0a-849b-17e5565cb5a4",
+  "gemeldet_am": "2026-10-31",
+  "quelle": "Datenservice des Bundes"
+ },
+ "25984392": {
+  "titel": "Rahmenvertrag Pflege Baumscheiben",
+  "auftraggeber": "Stadt Forst (Lausitz), Die Bürgermeisterin, Fachbereich Bauverwaltung",
+  "ort": "03149 Forst",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 77211500-7"
+  ],
+  "frist_datum": "2026-11-19",
+  "frist_zeit": "11:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXVHYH1DYHGVG4U7",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25984392",
+  "gemeldet_am": "2026-10-31",
+  "quelle": "Datenservice des Bundes"
+ },
+ "25989582": {
+  "titel": "Aufwertung Reptilienlebensraum durch Mahd (Peickwitzer Teiche)",
+  "auftraggeber": "Stiftung NaturSchutzFonds Brandenburg",
+  "ort": "14473 Potsdam",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77300000-3,45112700-2",
+   "Titel: mahd"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXP9YCHHUD9",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25989582",
+  "gemeldet_am": "2026-11-01",
+  "quelle": "Datenservice des Bundes"
+ },
+ "dd89c813-ede3-49dc-9e39-f8c4d645a67f": {
+  "titel": "EVC HotSpots - Ausführung SST Parzellenstraße - Los 2 (Abbruch Teil 2)",
+  "auftraggeber": "Elektroenergieversorgung Cottbus GmbH",
+  "ort": "Cottbus",
+  "plz": "03046",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 45112000,90513000"
+  ],
+  "frist_datum": "2026-11-30",
+  "frist_zeit": "16:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXP9YBYH3V5/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/dd89c813-ede3-49dc-9e39-f8c4d645a67f",
+  "gemeldet_am": "2026-11-01",
+  "quelle": "Datenservice des Bundes"
+ },
+ "1a3d258a-54bc-47f1-8463-8c958469fdb4": {
+  "titel": "Parkpflege Los 3",
+  "auftraggeber": "Grün Berlin GmbH",
+  "ort": "Berlin",
+  "plz": "12349",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77313000",
+   "Titel: parkpflege"
+  ],
+  "frist_datum": "2026-11-30",
+  "frist_zeit": "12:00",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211679",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/1a3d258a-54bc-47f1-8463-8c958469fdb4",
+  "gemeldet_am": "2026-11-02",
+  "quelle": "Datenservice des Bundes"
+ },
+ "0874b3ca-9824-4123-9955-e94e33eea936": {
+  "titel": "Flächenentwicklung an der Kuhheide, 16303 Schwedt/O.; hier: Rodung einer Waldfläche",
+  "auftraggeber": "Landkreis Uckermark, Rechtsamt",
+  "ort": "Schwedt/O.",
+  "plz": "16303",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 77211300,77200000,77211100,77211400"
+  ],
+  "frist_datum": "2026-12-03",
+  "frist_zeit": "11:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXP9YH1H318/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/0874b3ca-9824-4123-9955-e94e33eea936",
+  "gemeldet_am": "2026-11-02",
+  "quelle": "Datenservice des Bundes"
+ },
+ "fbea000c-759b-4ccf-b3cc-2d39557258ae": {
+  "titel": "Sanierung und Erweiterung Erlebnisbad Senftenberg: Los 50 - Freianlagen",
+  "auftraggeber": "Stadt Senftenberg",
+  "ort": "Senftenberg",
+  "plz": "01968",
+  "auftragsart": "works",
+  "wert": "k. A.",
+  "punkte": 6,
+  "gruende": [
+   "CPV 45112700, 45112720",
+   "Titel: freianlage",
+   "Text: landschaftsbau, rasen"
+  ],
+  "frist_datum": "2026-12-14",
+  "frist_zeit": "08:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXUTYYDDYH3K77KU/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/fbea000c-759b-4ccf-b3cc-2d39557258ae",
+  "gemeldet_am": "2026-11-04",
+  "quelle": "Datenservice des Bundes"
+ },
+ "021ec749-dfd8-4458-a668-36de5e2e04cf": {
+  "titel": "Techn. Anlagen und Leitungsbau Erschließung und Techn. Anlagen Entwässerung in Außenanlagen",
+  "auftraggeber": "GESOBAU AG",
+  "ort": "Berlin",
+  "plz": "12629",
+  "auftragsart": "works",
+  "wert": "1 EUR",
+  "punkte": 6,
+  "gruende": [
+   "CPV 45111291",
+   "Titel: außenanlage",
+   "Text: mahd, rasen"
+  ],
+  "frist_datum": "2026-12-03",
+  "frist_zeit": "10:30",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211747",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/021ec749-dfd8-4458-a668-36de5e2e04cf",
+  "gemeldet_am": "2026-11-04",
+  "quelle": "Datenservice des Bundes"
+ },
+ "25994446": {
+  "titel": "Baumarbeiten im Park Sanssouci, PR III, Herbst 2026 / Winter 2027",
+  "auftraggeber": "Stiftung Preußische Schlösser und Gärten Berlin-Brandenburg",
+  "ort": "14469 Potsdam",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 03452000-3, 77211400-6,45112711-2,77211500-7"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXURYYDDY5DWP9QR",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25994446",
+  "gemeldet_am": "2026-11-04",
+  "quelle": "Datenservice des Bundes"
+ },
+ "25994486": {
+  "titel": "Pflege und Unterhaltung der Sarg- und Urnengedenkstätten 16798 Fürstenberg/Havel und Ortsteilen",
+  "auftraggeber": "Stadt Fürstenberg/Havel",
+  "ort": "16798 Fürstenberg/Havel",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 77300000-3"
+  ],
+  "frist_datum": "2026-11-24",
+  "frist_zeit": "13:30",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXP9Y5DHURZ",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/25994486",
+  "gemeldet_am": "2026-11-04",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-211169": {
+  "titel": "Konzeption, Ausschreibung und Überwachung naturschutzfachlicher Landschaftspflege",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "12487",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: landschaftspflege"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211169",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211169",
+  "gemeldet_am": "2026-11-04",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "berlin-211679": {
+  "titel": "Parkpflege Los 3",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "12349",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: parkpflege"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211679",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211679",
+  "gemeldet_am": "2026-11-04",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "d1835b36-32d6-4eeb-ab2e-89f4a1aa8081": {
+  "titel": "Konzeption, Ausschreibung und Überwachung naturschutzfachlicher Landschaftspflege",
+  "auftraggeber": "WISTA.Plan GmbH",
+  "ort": "Berlin",
+  "plz": "12487",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "Titel: landschaftspflege",
+   "Text: landschaftsbau, rasen, biotop"
+  ],
+  "frist_datum": "2026-12-03",
+  "frist_zeit": "12:00",
+  "portal": "https://www.meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211169",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/d1835b36-32d6-4eeb-ab2e-89f4a1aa8081",
+  "gemeldet_am": "2026-11-05",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-211747": {
+  "titel": "Techn. Anlagen und Leitungsbau Erschließung und Techn. Anlagen Entwässerung in Außenanlagen",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "12629",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: außenanlage"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211747",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211747",
+  "gemeldet_am": "2026-11-05",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "764460f7-37b2-410d-9cfc-5ea11a82141d": {
+  "titel": "Externe Baumkontrolle B- und L-Straßen SM Eberswalde 2027",
+  "auftraggeber": "Landesbetrieb Straßenwesen Brandenburg Dienststätte Eberswalde",
+  "ort": "Eberswalde",
+  "plz": "16225",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 5,
+  "gruende": [
+   "CPV 77211500",
+   "Titel: baumkontroll"
+  ],
+  "frist_datum": "2026-12-08",
+  "frist_zeit": "10:00",
+  "portal": "https://www.ausschreibungen.ls.brandenburg.de/NetServer/TenderingProcedureDetails?function=_Details&TenderOID=54321-Tender-1a19fee206d-4f3c9114b1e2731a",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/764460f7-37b2-410d-9cfc-5ea11a82141d",
+  "gemeldet_am": "2026-11-06",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-211746": {
+  "titel": "Kauf von 5 Elektro-Dienstfahrzeugen für den Außendienst des Straßen- und Grünflächenamtes",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "12681",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: grünfläche"
+  ],
+  "frist_datum": "",
+  "frist_zeit": "",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/211746",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-211746",
+  "gemeldet_am": "2026-11-06",
+  "quelle": "Vergabeplattform Berlin"
+ },
+ "26001470": {
+  "titel": "Renaturierung des Vetschauer Mühlenfließes  Abschnitt 5, Station 0+000 bis 1+500",
+  "auftraggeber": "Wasser- und Bodenverband &quot;Oberland Calau&quot;",
+  "ort": "03226 Raddusch",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: renaturierung"
+  ],
+  "frist_datum": "2026-11-25",
+  "frist_zeit": "10:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXP9YC1HU5Z",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/26001470",
+  "gemeldet_am": "2026-11-06",
+  "quelle": "Datenservice des Bundes"
+ },
+ "3614c05e-21c7-4aa1-9b62-072d8d524971": {
+  "titel": "Baumkontrollen für die Landeshauptstadt Potsdam",
+  "auftraggeber": "Landeshauptstadt Potsdam, Bereich Vergabemanagement",
+  "ort": "Potsdam",
+  "plz": "14469",
+  "auftragsart": "services",
+  "wert": "k. A.",
+  "punkte": 6,
+  "gruende": [
+   "CPV 77211500, 77211500,77230000,77231500",
+   "Titel: baumkontroll",
+   "Text: gehölz, friedhof"
+  ],
+  "frist_datum": "2026-11-23",
+  "frist_zeit": "08:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXP9YCRHJC4/documents",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/3614c05e-21c7-4aa1-9b62-072d8d524971",
+  "gemeldet_am": "2026-11-07",
+  "quelle": "Datenservice des Bundes"
+ },
+ "26009628": {
+  "titel": "Baumersatzpflanzung Stadtpark Fürstenberg/Havel",
+  "auftraggeber": "Stadt Fürstenberg/Havel",
+  "ort": "16798 Fürstenberg/Havel",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 03452000-3, 77310000-6"
+  ],
+  "frist_datum": "2026-11-24",
+  "frist_zeit": "14:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXP9Y5DHUMQ",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/26009628",
+  "gemeldet_am": "2026-11-07",
+  "quelle": "Datenservice des Bundes"
+ },
+ "26009536": {
+  "titel": "HIL Heeresinstandsetzungslogistik Doberlug-Kirchhain, Neubau Strahlhalle, Tiefbauarbeiten - Rückbau und Neuverlegung RW-Leitung",
+  "auftraggeber": "Brandenburgischer Landesbetrieb für Liegenschaften und Bauen (BLB) - Zentrale Vergabestelle",
+  "ort": "03253 Doberlug-Kirchhain",
+  "plz": "",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 3,
+  "gruende": [
+   "CPV 45112500-0"
+  ],
+  "frist_datum": "2026-11-26",
+  "frist_zeit": "09:00",
+  "portal": "https://vergabemarktplatz.brandenburg.de/VMPSatellite/notice/CXSEYYDDY54UE22X",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/26009536",
+  "gemeldet_am": "2026-11-07",
+  "quelle": "Datenservice des Bundes"
+ },
+ "berlin-210469": {
+  "titel": "550.01 Technische Anlagen in Außenanlagen am Standort SIE - Siemensstadt, Straße am …",
+  "auftraggeber": "",
+  "ort": "Berlin",
+  "plz": "10707",
+  "auftragsart": "",
+  "wert": "k. A.",
+  "punkte": 2,
+  "gruende": [
+   "Titel: außenanlage"
+  ],
+  "frist_datum": "2026-12-01",
+  "frist_zeit": "13:00",
+  "portal": "https://meinauftrag.rib.de/public/DetailsByPlatformIdAndTenderId/platformId/2/tenderId/210469",
+  "bekanntmachung": "https://oeffentlichevergabe.de/ui/de/bekanntmachung/berlin-210469",
+  "gemeldet_am": "2026-11-07",
+  "quelle": "Vergabeplattform Berlin"
+ }
+}

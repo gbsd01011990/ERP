@@ -160,6 +160,27 @@ Messenger (je Firma eigene Zugänge, Einstellungen → Messenger):
 - Noch nicht: Threema Work (Gateway mit Ende-zu-Ende-Modus), Bilder und Dateien herunterladen.
   Signal und iMessage bieten keine offene Schnittstelle für Firmen.
 
+Ausschreibungs-Radar (Vertrieb → Ausschreibungen):
+
+- Der Dienst `radar` ruft jeden Morgen ab 6:30 Uhr (`RADAR_UHRZEIT`) die Bekanntmachungen des Vortags ab:
+  Datenservice öffentlicher Einkauf (oeffentlichevergabe.de, Bund und Länder) und Vergabeplattform Berlin.
+  War der Dienst aus, holt er bis zu 14 Tage nach. Abruf und Bewertung: `radar/radar_erp.py`
+  (übernommen aus dem Repository ausschreibungs-radar, nur Python-Standardbibliothek).
+- Jede Firma hat ihr eigenes Profil (Region, CPV-Codes, Stichwörter, Ausschlussbegriffe, Punkte), Admins pflegen es
+  unter Einstellungen → Ausschreibungs-Radar. Ausgangsprofil: GaLaBau für RD und GBSD, Baumdienst für KUD.
+  Eine Ausschreibung kann bei mehreren Firmen auftauchen; jede entscheidet für sich.
+- Ansichten Neu, Zur Teilnahme, Aussortiert und Abgelaufen; Fristen farbig (bis 7 Tage rot, bis 21 Tage orange).
+  „Als Projekt anlegen“ übernimmt Auftraggeber, Ort, Wert und Links ins Projekt und legt die Aufgabe
+  „Vergabeunterlagen sichten“ eine Woche vor der Frist an. Die 53 offenen Treffer des alten Radars
+  übernimmt der Seed einmalig für RD.
+- Von Hand: `npm run radar:lauf -- --einmal --tage 3` oder in den Einstellungen „Jetzt abrufen“.
+
+Bedienung:
+
+- Seitenleiste mit Gruppen (Vertrieb, Kommunikation, Abrechnung, Einkauf, Betrieb, Einstellungen) und Zählern
+  für neue Ausschreibungen, offene E-Mails, fällige Aufgaben, offene Gespräche und ungeprüfte Eingangsrechnungen.
+  Auf dem Handy: Menü oben und Schnellleiste unten (Start, Zeiten, Projekte, Lieferschein).
+
 Mandanten:
 
 - Eigene Anmeldeseite je Firma mit Logo und Farben: `/login/gbsd`, `/login/riedrich-dremel`,
@@ -171,8 +192,8 @@ Schnittstelle:
 - GraphQL-API unter `/api/graphql` mit API-Schlüsseln je Benutzer (lesen oder lesen und schreiben),
   GraphiQL-Editor im Browser. Details in [docs/API.md](docs/API.md).
 
-Geplant: E-Rechnung, offene Posten und DATEV-Export, Telefonagent und Messenger, Plantafel, Handy-App für Kolonnen, HRworks, DATEV,
-Zusatzwerkzeuge (Radar, GAEB, Baumkataster, Pflegeverträge, Fuhrpark).
+Geplant: Plantafel, Handy-App für Kolonnen, HRworks, DATEV Unternehmen online,
+Zusatzwerkzeuge (GAEB X89, Baumkataster, Pflegeverträge, Fuhrpark).
 
 ## PDF-Erzeugung
 

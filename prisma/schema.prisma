@@ -105,6 +105,8 @@ model Firma {
   bestellungen       Bestellung[]
   eingangsrechnungen Eingangsrechnung[]
   lieferscheine      Lieferschein[]
+  radarProfil        RadarProfil?
+  radarTreffer       AusschreibungTreffer[]
 }
 
 model Benutzer {
@@ -119,7 +121,7 @@ model Benutzer {
   zugriffe                  Zugriff[]
   sitzungen                 Sitzung[]
   logbuch                   LogbuchEintrag[]
-  projekte                  Projekt[]          @relation("Verantwortlich")
+  projekte                  Projekt[]              @relation("Verantwortlich")
   angebote                  Angebot[]
   apiSchluessel             ApiSchluessel[]
   lagerBuchungen            LagerBuchung[]
@@ -127,23 +129,24 @@ model Benutzer {
   geraetEinsaetze           GeraetEinsatz[]
   postfaecher               Postfach[]
   postfachZugriffe          PostfachZugriff[]
-  aufgabenZustaendig        Aufgabe[]          @relation("AufgabeZustaendig")
-  aufgabenErstellt          Aufgabe[]          @relation("AufgabeErsteller")
-  zeiten                    Zeiteintrag[]      @relation("ZeitMitarbeiter")
-  zeitenErfasst             Zeiteintrag[]      @relation("ZeitErfasser")
-  zeitenFreigabe            Zeiteintrag[]      @relation("ZeitFreigabe")
-  rechnungenErstellt        Rechnung[]         @relation("RechnungErsteller")
-  rechnungenFestgeschrieben Rechnung[]         @relation("RechnungFestschreiber")
+  aufgabenZustaendig        Aufgabe[]              @relation("AufgabeZustaendig")
+  aufgabenErstellt          Aufgabe[]              @relation("AufgabeErsteller")
+  zeiten                    Zeiteintrag[]          @relation("ZeitMitarbeiter")
+  zeitenErfasst             Zeiteintrag[]          @relation("ZeitErfasser")
+  zeitenFreigabe            Zeiteintrag[]          @relation("ZeitFreigabe")
+  rechnungenErstellt        Rechnung[]             @relation("RechnungErsteller")
+  rechnungenFestgeschrieben Rechnung[]             @relation("RechnungFestschreiber")
   termine                   Termin[]
   gespraecheZustaendig      Gespraech[]
   agentStandard             TelefonAgent[]
   zahlungenErfasst          Zahlung[]
   mahnungenErstellt         Mahnung[]
-  bestellungenErstellt      Bestellung[]       @relation("BestellungErsteller")
-  bestellungenBestellt      Bestellung[]       @relation("BestellungBesteller")
+  bestellungenErstellt      Bestellung[]           @relation("BestellungErsteller")
+  bestellungenBestellt      Bestellung[]           @relation("BestellungBesteller")
   wareneingaenge            Wareneingang[]
-  eingangsFreigaben         Eingangsrechnung[] @relation("EingangFreigabe")
+  eingangsFreigaben         Eingangsrechnung[]     @relation("EingangFreigabe")
   lieferscheineErfasst      Lieferschein[]
+  radarBearbeitet           AusschreibungTreffer[]
 }
 
 model Zugriff {
@@ -324,6 +327,8 @@ model Projekt {
   eingangsrechnungen Eingangsrechnung[]
 
   lieferscheine Lieferschein[]
+
+  radarTreffer AusschreibungTreffer[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -1524,4 +1529,88 @@ model LieferscheinDatei {
   lieferschein   Lieferschein @relation(fields: [lieferscheinId], references: [id], onDelete: Cascade)
 
   @@index([hash])
+}
+
+// ---------------------------------------------------------------- Ausschreibungs-Radar
+// Täglicher Abgleich öffentlicher Ausschreibungen (Datenservice Öffentlicher Einkauf,
+// Vergabeplattform Berlin). Eine Bekanntmachung, je Firma ein Treffer mit eigener Bewertung.
+
+enum RadarStatus {
+  NEU
+  TEILNAHME // Ausschreibungskorb: wir prüfen bzw. bieten
+  AUSSORTIERT // Papierkorb
+}
+
+model RadarProfil {
+  id            String   @id @default(cuid())
+  firmaId       String   @unique
+  aktiv         Boolean  @default(true)
+  regionNuts    String[]
+  regionPlz     String[]
+  auftragsarten String[] // works, services, supplies, "" (ohne Angabe)
+  cpvPraefixe   String[]
+  stichwoerter  String[]
+  ausschluss    String[]
+  mindestScore  Int      @default(2)
+  scoreCpv      Int      @default(3)
+  scoreTitel    Int      @default(2)
+  scoreText     Int      @default(1)
+  updatedAt     DateTime @updatedAt
+  firma         Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+}
+
+model Ausschreibung {
+  id                String                 @id @default(cuid())
+  kennung           String                 @unique
+  quelle            String
+  titel             String
+  beschreibung      String?
+  auftraggeber      String?
+  ort               String?
+  plz               String?
+  auftragsart       String?
+  verfahren         String?
+  wert              Decimal?               @db.Decimal(14, 2)
+  cpv               String[]
+  veroeffentlicht   DateTime?
+  frist             DateTime? // Angebotsfrist bzw. Eröffnungstermin (Berliner Zeit)
+  fristOhneZeit     Boolean                @default(false)
+  portalUrl         String?
+  bekanntmachungUrl String?
+  erstGesehen       DateTime               @default(now())
+  treffer           AusschreibungTreffer[]
+
+  @@index([frist])
+}
+
+model AusschreibungTreffer {
+  id              String        @id @default(cuid())
+  ausschreibungId String
+  firmaId         String
+  punkte          Int
+  gruende         String[]
+  status          RadarStatus   @default(NEU)
+  notiz           String?
+  projektId       String?
+  bearbeitetVonId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  ausschreibung   Ausschreibung @relation(fields: [ausschreibungId], references: [id], onDelete: Cascade)
+  firma           Firma         @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  projekt         Projekt?      @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  bearbeitetVon   Benutzer?     @relation(fields: [bearbeitetVonId], references: [id], onDelete: SetNull)
+
+  @@unique([ausschreibungId, firmaId])
+  @@index([firmaId, status])
+}
+
+model RadarLauf {
+  id        String    @id @default(cuid())
+  start     DateTime  @default(now())
+  ende      DateTime?
+  tage      String[]
+  neu       Int       @default(0)
+  treffer   Int       @default(0)
+  fehler    String?
+  protokoll String?
 }

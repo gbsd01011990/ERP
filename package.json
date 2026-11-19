@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test scripts/tests/*.test.ts",
     "test:integration": "NODE_OPTIONS=--require=./scripts/ohne-server-only.cjs tsx --test scripts/tests/*.itest.ts",
-    "mail:abruf": "NODE_OPTIONS=--require=./scripts/ohne-server-only.cjs tsx scripts/mail-abruf.ts"
+    "mail:abruf": "NODE_OPTIONS=--require=./scripts/ohne-server-only.cjs tsx scripts/mail-abruf.ts",
+    "radar:lauf": "NODE_OPTIONS=--require=./scripts/ohne-server-only.cjs tsx scripts/radar-lauf.ts",
+    "test:radar": "python3 -I -m unittest discover -s radar"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
