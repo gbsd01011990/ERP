@@ -107,6 +107,8 @@ model Firma {
   lieferscheine      Lieferschein[]
   radarProfil        RadarProfil?
   radarTreffer       AusschreibungTreffer[]
+  foerderProfil      FoerderProfil?
+  foerderTreffer     FoerderTreffer[]
 }
 
 model Benutzer {
@@ -147,6 +149,7 @@ model Benutzer {
   eingangsFreigaben         Eingangsrechnung[]     @relation("EingangFreigabe")
   lieferscheineErfasst      Lieferschein[]
   radarBearbeitet           AusschreibungTreffer[]
+  foerderBearbeitet         FoerderTreffer[]
 }
 
 model Zugriff {
@@ -329,6 +332,8 @@ model Projekt {
   lieferscheine Lieferschein[]
 
   radarTreffer AusschreibungTreffer[]
+
+  foerderTreffer FoerderTreffer[]
 
   @@unique([firmaId, nummer])
   @@unique([firmaId, heroId])
@@ -1611,6 +1616,92 @@ model RadarLauf {
   tage      String[]
   neu       Int       @default(0)
   treffer   Int       @default(0)
+  fehler    String?
+  protokoll String?
+}
+
+// ---------------------------------------------------------------- Fördermittel-Radar
+// Programme aus der Förderdatenbank des Bundes (Bund, Berlin, Brandenburg). Je Firma ein
+// Treffer mit Zielgruppe: Förderung für den eigenen Betrieb oder für Kunden (Verkaufsargument).
+
+enum FoerderStatus {
+  NEU
+  GEMERKT // wird geprüft
+  BEANTRAGT // Antrag gestellt (Betrieb) bzw. Kunde nutzt die Förderung
+  AUSSORTIERT
+}
+
+model FoerderProfil {
+  id                  String   @id @default(cuid())
+  firmaId             String   @unique
+  aktiv               Boolean  @default(true)
+  regionen            String[] // bundesweit, Berlin, Brandenburg
+  stichwoerterBetrieb String[]
+  stichwoerterKunde   String[]
+  bereicheBetrieb     String[]
+  bereicheKunde       String[]
+  berechtigteKunde    String[]
+  ausschluss          String[]
+  mindestScore        Int      @default(3)
+  scoreTitel          Int      @default(3)
+  scoreText           Int      @default(1)
+  scoreBereich        Int      @default(1)
+  updatedAt           DateTime @updatedAt
+  firma               Firma    @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+}
+
+model Foerderprogramm {
+  id             String           @id @default(cuid())
+  url            String           @unique
+  titel          String
+  kurztext       String?
+  volltext       String?
+  zusatzinfos    String?
+  foerderart     String[]
+  bereiche       String[]
+  gebiete        String[]
+  berechtigte    String[]
+  foerdergeber   String?
+  kontakt        Json?
+  links          String[]
+  fristen        String[] // gefundene Daten (ISO), nur Hinweis
+  detailAm       DateTime?
+  erstGesehen    DateTime         @default(now())
+  zuletztGesehen DateTime         @default(now())
+  beendetAm      DateTime? // nicht mehr in der Datenbank
+  treffer        FoerderTreffer[]
+}
+
+model FoerderTreffer {
+  id              String          @id @default(cuid())
+  programmId      String
+  firmaId         String
+  punkte          Int
+  zielgruppen     String[] // betrieb, kunde
+  gruende         String[]
+  status          FoerderStatus   @default(NEU)
+  notiz           String?
+  projektId       String?
+  bearbeitetVonId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  programm        Foerderprogramm @relation(fields: [programmId], references: [id], onDelete: Cascade)
+  firma           Firma           @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  projekt         Projekt?        @relation(fields: [projektId], references: [id], onDelete: SetNull)
+  bearbeitetVon   Benutzer?       @relation(fields: [bearbeitetVonId], references: [id], onDelete: SetNull)
+
+  @@unique([programmId, firmaId])
+  @@index([firmaId, status])
+}
+
+model FoerderLauf {
+  id        String    @id @default(cuid())
+  start     DateTime  @default(now())
+  ende      DateTime?
+  programme Int       @default(0)
+  details   Int       @default(0)
+  neu       Int       @default(0)
+  beendet   Int       @default(0)
   fehler    String?
   protokoll String?
 }

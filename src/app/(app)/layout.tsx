@@ -15,17 +15,18 @@ async function zaehlerLaden(b: Awaited<ReturnType<typeof benutzerPflicht>>) {
   const jetzt = new Date();
   const bisMorgen = berlinZuUtc(tagPlus(berlinTag(jetzt), 1));
   try {
-    const [aufgaben, mails, gespraeche, eingang, radar] = await Promise.all([
+    const [aufgaben, mails, gespraeche, eingang, radar, foerder] = await Promise.all([
       db.aufgabe.count({ where: { firmaId, zustaendigId: b.id, erledigtAm: null, faelligAm: { lt: bisMorgen } } }),
       db.email.count({ where: { AND: [await emailFilter(b), { richtung: "EINGANG", kontaktId: null, projektId: null, ignoriert: false }] } }),
       buero ? db.gespraech.count({ where: { firmaId, status: "OFFEN" } }) : 0,
       buero ? db.eingangsrechnung.count({ where: { firmaId, status: { in: ["NEU", "PRUEFUNG"] } } }) : 0,
       buero ? db.ausschreibungTreffer.count({ where: { firmaId, status: "NEU", ausschreibung: { OR: [{ frist: null }, { frist: { gte: jetzt } }] } } }) : 0,
+      buero ? db.foerderTreffer.count({ where: { firmaId, status: "NEU", programm: { beendetAm: null } } }) : 0,
     ]);
-    return { aufgaben, mails, gespraeche, eingang, radar };
+    return { aufgaben, mails, gespraeche, eingang, radar, foerder };
   } catch (e) {
     console.error("Navigationszähler:", e);
-    return { aufgaben: 0, mails: 0, gespraeche: 0, eingang: 0, radar: 0 };
+    return { aufgaben: 0, mails: 0, gespraeche: 0, eingang: 0, radar: 0, foerder: 0 };
   }
 }
 
@@ -41,7 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     {
       titel: "Vertrieb",
       eintraege: [
-        ...(buero ? [{ href: "/ausschreibungen", text: "Ausschreibungen", zaehler: z.radar }] : []),
+        ...(buero ? [{ href: "/ausschreibungen", text: "Ausschreibungen", zaehler: z.radar }, { href: "/foerdermittel", text: "Fördermittel", zaehler: z.foerder }] : []),
         { href: "/projekte", text: "Projekte" },
         { href: "/angebote", text: "Angebote" },
         { href: "/kontakte", text: "Kontakte" },
@@ -95,6 +96,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           { href: "/einstellungen/telefonagent", text: "Telefonagent" },
           { href: "/einstellungen/messenger", text: "Messenger" },
           { href: "/einstellungen/radar", text: "Ausschreibungs-Radar" },
+          { href: "/einstellungen/foerdermittel", text: "Fördermittel-Radar" },
         ] : []),
         { href: "/einstellungen/api", text: "API" },
       ],

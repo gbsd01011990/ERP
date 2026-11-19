@@ -38,7 +38,7 @@ export default async function Uebersicht() {
   const bisMorgen = berlinZuUtc(tagPlus(berlinTag(new Date()), 1));
   const buero = b.rolle !== "KOLONNE";
   const jetzt = new Date();
-  const [meineAufgaben, offeneMails, radarNeu, radarDringend] = await Promise.all([
+  const [meineAufgaben, offeneMails, radarNeu, radarDringend, foerderNeu, foerderGemerkt] = await Promise.all([
     db.aufgabe.findMany({
       where: { firmaId: b.mandant.id, zustaendigId: b.id, erledigtAm: null, OR: [{ faelligAm: { lt: bisMorgen } }, { faelligAm: null }] },
       include: aufgabeInclude, orderBy: [{ faelligAm: { sort: "asc", nulls: "last" } }], take: 20,
@@ -48,6 +48,8 @@ export default async function Uebersicht() {
     buero
       ? db.ausschreibungTreffer.count({ where: { firmaId: b.mandant.id, status: { in: ["NEU", "TEILNAHME"] }, ausschreibung: { frist: { gte: jetzt, lte: new Date(jetzt.getTime() + 7 * 864e5) } } } })
       : 0,
+    buero ? db.foerderTreffer.count({ where: { firmaId: b.mandant.id, status: "NEU", programm: { beendetAm: null } } }) : 0,
+    buero ? db.foerderTreffer.count({ where: { firmaId: b.mandant.id, status: "GEMERKT", programm: { beendetAm: null } } }) : 0,
   ]);
   const knapp = mindest
     .map((a) => ({ a, gesamt: a.bestaende.reduce((s, x) => s + n(x.menge), 0) }))
@@ -115,6 +117,13 @@ export default async function Uebersicht() {
               <div className={`text-sm ${radarDringend ? "font-medium text-red-700" : "text-slate-600"}`}>
                 {radarDringend ? `${radarDringend} mit Frist in den nächsten 7 Tagen` : "keine Frist in den nächsten 7 Tagen"}
               </div>
+            </Link>
+          )}
+          {buero && (
+            <Link href="/foerdermittel" className="karte block hover:border-marke">
+              <div className="text-sm text-slate-500">Fördermittel</div>
+              <div className="text-2xl font-semibold">{foerderNeu} neu</div>
+              <div className="text-sm text-slate-600">{foerderGemerkt} gemerkt und in Prüfung</div>
             </Link>
           )}
         </div>

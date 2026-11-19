@@ -175,10 +175,27 @@ Ausschreibungs-Radar (Vertrieb → Ausschreibungen):
   übernimmt der Seed einmalig für RD.
 - Von Hand: `npm run radar:lauf -- --einmal --tage 3` oder in den Einstellungen „Jetzt abrufen“.
 
+Fördermittel-Radar (Vertrieb → Fördermittel):
+
+- Derselbe Dienst `radar` liest nach den Ausschreibungen die Förderdatenbank des Bundes (foerderdatenbank.de:
+  Programme von Bund, Ländern und EU) für bundesweit, Berlin und Brandenburg. Abruf und Bewertung:
+  `radar/foerder_erp.py` (Standardbibliothek; Seitenaufbau nach dem MIT-lizenzierten Scraper von CorrelAid).
+- Jedes Programm wird je Firma zweimal geprüft: **für den Betrieb** (Antragsteller Unternehmen: Digitalisierung,
+  Weiterbildung, Fahrzeuge, Energie …) und **für Kunden** (Dach- und Fassadenbegrünung, Entsiegelung,
+  Klimaanpassung, Bäume, Spielplätze …). Kundenförderung ist ein Verkaufsargument und kündigt Aufträge an.
+- Ansichten Neu, Gemerkt, Beantragt/genutzt, Aussortiert, Beendet; Filter Betrieb/Kunden. Aufgabe „Förderantrag prüfen“
+  eine Woche vor einer im Text erkannten Frist, Zuordnung zu einem Projekt, Notiz.
+- Profile je Firma unter Einstellungen → Fördermittel-Radar (GaLaBau für RD und GBSD, Baumdienst für KUD).
+  Nach dem Speichern bewertet das Radar alle bekannten Programme sofort neu.
+- Rücksicht auf die Bot-Abwehr der Förderdatenbank: Pause zwischen den Abrufen (`FOERDER_PAUSE`, Standard 1,5 s),
+  höchstens 120 Einzelseiten je Lauf (`FOERDER_DETAILS_MAX`), höchstens drei Versuche am Tag. Einzelseiten werden
+  nach 30 Tagen neu gelesen. Programme, die aus einer vollständig gelesenen Liste verschwinden, gelten als beendet.
+- Von Hand: `npm run radar:lauf -- --foerder` oder in den Einstellungen „Jetzt abrufen“.
+
 Bedienung:
 
 - Seitenleiste mit Gruppen (Vertrieb, Kommunikation, Abrechnung, Einkauf, Betrieb, Einstellungen) und Zählern
-  für neue Ausschreibungen, offene E-Mails, fällige Aufgaben, offene Gespräche und ungeprüfte Eingangsrechnungen.
+  für neue Ausschreibungen und Fördermittel, offene E-Mails, fällige Aufgaben, offene Gespräche und ungeprüfte Eingangsrechnungen.
   Auf dem Handy: Menü oben und Schnellleiste unten (Start, Zeiten, Projekte, Lieferschein).
 
 Mandanten:
